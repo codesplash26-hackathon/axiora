@@ -352,8 +352,8 @@ body {
 
 .heart-wrapper {
   position: relative;
-  width: 60%;
-  max-width: 400px;
+  width: 90%;
+  max-width: 650px;
   z-index: 2;
   filter: drop-shadow(0 25px 45px rgba(0, 0, 0, 0.15));
 }
@@ -362,7 +362,6 @@ body {
   width: 100%;
   height: auto;
   display: block;
-  mix-blend-mode: multiply;
 }
 
 .heartbeat-anim {
@@ -382,7 +381,7 @@ body {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 1);
   border-radius: 1.2rem;
-  padding: 1.25rem;
+  padding: 1rem;
   box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255,255,255,1) inset;
   z-index: 3;
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
@@ -418,7 +417,7 @@ body {
 
 .card-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--color-primary-dark);
 }
@@ -433,7 +432,7 @@ body {
 .card-explain {
   top: 5%;
   left: -15%;
-  width: 250px;
+  width: 210px;
 }
 
 .factor-list {
@@ -446,7 +445,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: var(--color-secondary-text);
 }
@@ -475,7 +474,7 @@ body {
 .card-risk {
   top: 10%;
   right: -15%;
-  width: 220px;
+  width: 180px;
   text-align: center;
 }
 
@@ -488,7 +487,7 @@ body {
 }
 
 .gauge-svg {
-  width: 150px;
+  width: 120px;
   height: auto;
 }
 
@@ -513,7 +512,7 @@ body {
 }
 
 .gauge-value {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--color-accent-red);
   line-height: 1;
@@ -529,9 +528,9 @@ body {
 
 /* Card 3: Pathways */
 .card-pathways {
-  bottom: 15%;
+  bottom: 10%;
   right: -25%;
-  width: 280px;
+  width: 240px;
 }
 
 .pathway-list {
@@ -567,8 +566,8 @@ body {
 }
 
 .path-text { flex: 1; }
-.path-text strong { display: block; font-size: 0.85rem; font-weight: 700; color: var(--color-primary-dark); }
-.path-text span { display: block; font-size: 0.75rem; color: var(--color-secondary-text); margin-top: 0.1rem; }
+.path-text strong { display: block; font-size: 0.8rem; font-weight: 700; color: var(--color-primary-dark); }
+.path-text span { display: block; font-size: 0.7rem; color: var(--color-secondary-text); margin-top: 0.1rem; }
 .path-arrow { color: #94a3b8; transition: transform 0.2s ease; }
 .pathway-item:hover .path-arrow { transform: translateX(3px); color: var(--color-accent-blue); }
 

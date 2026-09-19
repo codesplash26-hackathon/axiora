@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import heartImg from './assets/shiny_tech_heart.jpg';
+import heartImg from './assets/shiny_tech_heart.png';
 import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, ArrowDown, ActivitySquare, GitMerge, ChevronRight } from 'lucide-react';
 
 const App = () => {
