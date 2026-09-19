@@ -1,151 +1,209 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import './App.css';
-import heartImg from './assets/3d_heart.png';
-import { Activity, Brain, Search, Map, Heart } from 'lucide-react';
+import heartImg from './assets/shiny_tech_heart.jpg';
+import { Activity, Brain, Search, Map, Heart, ArrowRight, Play, ChevronRight, Droplets, Target, Zap, ActivitySquare } from 'lucide-react';
 
 const App = () => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
-    <div className="landing-container">
-      {/* Left Column */}
-      <div className="left-content">
-        <header className="header">
-          <div className="logo-icon">
-            <Heart size={48} color="#0284c7" fill="#e0f2fe" strokeWidth={2} />
-            <Activity size={24} color="#0284c7" className="logo-ecg" />
-          </div>
-          <div className="logo-text">
-            <span className="brand-name">CardioRecourse</span>
-            <span className="brand-subtitle">
-              An Explainable AI (XAI) Clinical Decision Support<br/>
-              System for Actionable Cardiovascular Risk Reduction
-            </span>
-          </div>
-        </header>
-
-        <div className="hero-text">
-          <h1 className="tagline">Understand the <span className="highlight-why">why.</span><br/>Take the right steps.</h1>
-          <p className="description">
-            More than a risk score — a personalized path<br/>to a healthier heart.
-          </p>
-        </div>
-
-        <div className="features-grid">
-          <div className="feature-item">
-            <div className="feature-icon bg-blue-100">
-              <Brain size={28} color="#0284c7" />
-            </div>
-            <span>AI-Powered<br/>Risk Prediction</span>
-          </div>
-          <div className="feature-item">
-            <div className="feature-icon bg-green-100">
-              <Search size={28} color="#16a34a" />
-            </div>
-            <span>Transparent<br/>Explanations<br/>(SHAP)</span>
-          </div>
-          <div className="feature-item">
-            <div className="feature-icon bg-purple-100">
-              <Map size={28} color="#9333ea" />
-            </div>
-            <span>Personalized<br/>Action Plans<br/>(DICE)</span>
-          </div>
-          <div className="feature-item">
-            <div className="feature-icon bg-red-100">
-              <Heart size={28} color="#dc2626" />
-            </div>
-            <span>Healthier<br/>Tomorrows</span>
-          </div>
-        </div>
-
-        <footer className="footer-info">
-          A product of <strong>Axiora</strong><br/>
-          <span className="uni">University of Moratuwa</span>
-        </footer>
+    <div className={`landing-container ${mounted ? 'mounted' : ''}`}>
+      {/* Abstract Pathway Background */}
+      <div className="path-background">
+        <svg viewBox="0 0 1440 800" preserveAspectRatio="none" className="path-svg">
+          <path 
+            className="path-line" 
+            d="M -100,700 C 300,700 500,400 900,350 C 1200,300 1400,100 1600,50" 
+          />
+          <path 
+            className="path-line glow" 
+            d="M -100,700 C 300,700 500,400 900,350 C 1200,300 1400,100 1600,50" 
+          />
+        </svg>
       </div>
 
-      {/* Right Column */}
-      <div className="right-content">
-        <div className="heart-graphic-container">
-          {/* Replace this with the actual 3D heart asset if you have it */}
-          <img src={heartImg} alt="3D Heart Graphic" className="heart-img" />
-          
-          {/* Floating Cards */}
-          <div className="floating-card card-risk-factors">
-            <div className="card-header">
-              <div className="card-icon"><Search size={24} color="#0284c7" /></div>
-              <div>
-                <h4>Why this risk?</h4>
-                <p>Key factors contributing<br/>to your risk</p>
-              </div>
+      <div className="hero-content">
+        {/* LEFT COLUMN */}
+        <div className="hero-left">
+          <header className="brand-header fade-up-1">
+            <div className="logo-icon-wrapper">
+              <Heart className="logo-heart" size={32} />
+              <Activity className="logo-ecg" size={16} />
             </div>
-            <ul className="factors-list">
-              <li><span className="dot red"></span> High Blood Pressure <span className="value">+32%</span></li>
-              <li><span className="dot orange"></span> Cholesterol <span className="value">+24%</span></li>
-              <li><span className="dot purple"></span> Age <span className="value">+18%</span></li>
-              <li><span className="dot yellow"></span> Smoking <span className="value">+12%</span></li>
-              <li><span className="dot green"></span> BMI <span className="value">+8%</span></li>
-            </ul>
-          </div>
+            <div className="brand-text">
+              <span className="brand-name">CardioRecourse</span>
+            </div>
+          </header>
 
-          <div className="floating-card card-risk-level">
-            <div className="card-header-center">
-              <Heart size={24} color="#0ea5e9" className="card-icon-small" />
-              <h4>Your Risk Level</h4>
-            </div>
-            <div className="gauge">
-              <svg viewBox="0 0 100 50" className="gauge-svg">
-                <path d="M 10 40 A 30 30 0 0 1 90 40" fill="none" stroke="#e5e7eb" strokeWidth="8" strokeLinecap="round" />
-                <path d="M 10 40 A 30 30 0 0 1 90 40" fill="none" stroke="url(#gauge-gradient)" strokeWidth="8" strokeLinecap="round" strokeDasharray="95" strokeDashoffset="20" />
-                <defs>
-                  <linearGradient id="gauge-gradient">
-                    <stop offset="0%" stopColor="#fcd34d" />
-                    <stop offset="50%" stopColor="#f97316" />
-                    <stop offset="100%" stopColor="#ef4444" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="gauge-value">High</div>
-            </div>
-            <div className="risk-text">10-year risk: 18.7%</div>
-          </div>
+          <div className="hero-text-block">
+            <h2 className="subtitle fade-up-2">
+              Explainable AI for Smarter Cardiovascular Risk Reduction
+            </h2>
+            <h1 className="main-headline fade-up-3">
+              Your Risk, <span className="highlight-text">Explained.</span>
+            </h1>
+            <p className="description fade-up-4">
+              Understand what drives cardiovascular risk. Explore personalized pathways to reduce it.
+            </p>
 
-          <div className="floating-card card-pathways">
-             <div className="card-header">
-              <div className="card-icon"><Activity size={24} color="#10b981" /></div>
-              <div>
-                <h4>Your Personalized<br/>Recourse Pathways</h4>
-              </div>
+            <div className="cta-group fade-up-5">
+              <button className="btn-primary">
+                Explore CardioRecourse <ArrowRight size={18} className="btn-icon" />
+              </button>
+              <button className="btn-secondary">
+                <Play size={18} fill="currentColor" className="btn-icon-play" /> View Demo
+              </button>
             </div>
-            <ul className="pathways-list">
-              <li>
-                <div className="pathway-icon bg-green"><Activity size={16} color="white"/></div>
-                <div className="pathway-text">
-                  <strong>Lower BP</strong>
-                  <span>-6.2% risk reduction</span>
-                </div>
-                <span className="arrow">&gt;</span>
-              </li>
-              <li>
-                <div className="pathway-icon bg-purple"><span>🍽️</span></div>
-                <div className="pathway-text">
-                  <strong>Improve Diet</strong>
-                  <span>-4.8% risk reduction</span>
-                </div>
-                <span className="arrow">&gt;</span>
-              </li>
-              <li>
-                <div className="pathway-icon bg-blue"><span>🏃</span></div>
-                <div className="pathway-text">
-                  <strong>Increase Activity</strong>
-                  <span>-3.1% risk reduction</span>
-                </div>
-                <span className="arrow">&gt;</span>
-              </li>
-            </ul>
+
+            <div className="credibility fade-up-6">
+              A product of <strong>Axiora</strong> <span className="dot-separator">·</span> University of Moratuwa
+            </div>
           </div>
         </div>
 
-        <div className="footer-quote">
-          Smarter insights.<br/>Healthier choices.<br/>A safer you.
+        {/* RIGHT COLUMN */}
+        <div className="hero-right fade-in-delay">
+          <div className="visual-centerpiece">
+            
+            {/* Heart 3D Visual */}
+            <div className="heart-wrapper heartbeat-anim">
+              <img src={heartImg} alt="CardioRecourse Heart" className="heart-img" />
+            </div>
+
+            {/* Floating Card 1: Explainability */}
+            <div className="glass-card card-explain floating-anim-1">
+              <div className="card-header">
+                <div className="card-icon blue-bg"><Search size={16} /></div>
+                <h4 className="card-title">Your Risk, Explained</h4>
+              </div>
+              <div className="factor-bars">
+                <div className="factor">
+                  <div className="factor-info"><span>Blood Pressure</span><span className="val">+32%</span></div>
+                  <div className="bar-bg"><div className="bar-fill red" style={{width: '75%'}}></div></div>
+                </div>
+                <div className="factor">
+                  <div className="factor-info"><span>Cholesterol</span><span className="val">+24%</span></div>
+                  <div className="bar-bg"><div className="bar-fill orange" style={{width: '60%'}}></div></div>
+                </div>
+                <div className="factor">
+                  <div className="factor-info"><span>Age</span><span className="val">+18%</span></div>
+                  <div className="bar-bg"><div className="bar-fill teal" style={{width: '45%'}}></div></div>
+                </div>
+                <div className="factor">
+                  <div className="factor-info"><span>Smoking</span><span className="val">+12%</span></div>
+                  <div className="bar-bg"><div className="bar-fill purple" style={{width: '30%'}}></div></div>
+                </div>
+                <div className="factor">
+                  <div className="factor-info"><span>BMI</span><span className="val">+8%</span></div>
+                  <div className="bar-bg"><div className="bar-fill blue" style={{width: '20%'}}></div></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating Card 2: Risk Overview */}
+            <div className="glass-card card-risk floating-anim-2">
+              <h4 className="card-title text-center">10-Year Cardiovascular Risk</h4>
+              <div className="gauge-container">
+                <svg viewBox="0 0 100 55" className="gauge-svg">
+                  <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#f1f5f9" strokeWidth="8" strokeLinecap="round" />
+                  <path 
+                    className="gauge-fill" 
+                    d="M 10 45 A 35 35 0 0 1 90 45" 
+                    fill="none" 
+                    stroke="url(#risk-grad)" 
+                    strokeWidth="8" 
+                    strokeLinecap="round" 
+                  />
+                  <defs>
+                    <linearGradient id="risk-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#06b6d4" />
+                      <stop offset="60%" stopColor="#8b5cf6" />
+                      <stop offset="100%" stopColor="#f43f5e" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="gauge-text">
+                  <span className="gauge-value">18.7%</span>
+                  <span className="gauge-label elevated">Elevated Risk</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating Card 3: Pathways */}
+            <div className="glass-card card-pathways floating-anim-3">
+              <div className="card-header">
+                <div className="card-icon teal-bg"><Map size={16} /></div>
+                <h4 className="card-title">Personalized Pathways</h4>
+              </div>
+              <div className="pathway-list">
+                <div className="pathway-item">
+                  <div className="path-icon red-light"><Target size={16}/></div>
+                  <div className="path-text">Improve Blood Pressure</div>
+                  <ChevronRight size={16} className="path-arrow" />
+                </div>
+                <div className="pathway-item">
+                  <div className="path-icon teal-light"><Droplets size={16}/></div>
+                  <div className="path-text">Improve Lifestyle</div>
+                  <ChevronRight size={16} className="path-arrow" />
+                </div>
+                <div className="pathway-item">
+                  <div className="path-icon purple-light"><Zap size={16}/></div>
+                  <div className="path-text">Increase Physical Activity</div>
+                  <ChevronRight size={16} className="path-arrow" />
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* XAI FEATURE STRIP */}
+      <div className="feature-strip-wrapper fade-up-7">
+        <div className="feature-strip">
+          <div className="feat-item">
+            <div className="feat-icon-wrapper blue-outline">
+              <Brain size={20} className="feat-icon" />
+            </div>
+            <div className="feat-text">
+              <strong>AI-Powered Risk Prediction</strong>
+              <span>Risk stratification using machine learning</span>
+            </div>
+          </div>
+          <div className="feat-divider"></div>
+          <div className="feat-item">
+            <div className="feat-icon-wrapper teal-outline">
+              <Search size={20} className="feat-icon" />
+            </div>
+            <div className="feat-text">
+              <strong>Transparent Explanations</strong>
+              <span>SHAP-based explanation of contributing factors</span>
+            </div>
+          </div>
+          <div className="feat-divider"></div>
+          <div className="feat-item">
+            <div className="feat-icon-wrapper purple-outline">
+              <Map size={20} className="feat-icon" />
+            </div>
+            <div className="feat-text">
+              <strong>Personalized Recourse</strong>
+              <span>DiCE-based alternative pathways</span>
+            </div>
+          </div>
+          <div className="feat-divider"></div>
+          <div className="feat-item">
+            <div className="feat-icon-wrapper sky-outline">
+              <ActivitySquare size={20} className="feat-icon" />
+            </div>
+            <div className="feat-text">
+              <strong>Actionable Plans</strong>
+              <span>Turn insights into practical next steps</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
