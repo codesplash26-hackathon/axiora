@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 
 # Base Directory (Project Root)
 BASE_DIR = Path(__file__).resolve().parent
@@ -8,9 +8,12 @@ DATA_DIR = BASE_DIR / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
 
-# Artifacts Directory (Models, Precomputed SHAP backgrounds)
+# Artifacts Directory
 ARTIFACTS_DIR = BASE_DIR / "artifacts"
+DATA_SUMMARY_PATH = ARTIFACTS_DIR / "data_summary.json"
+RAW_MODEL_PATH = ARTIFACTS_DIR / "model_raw.joblib"
 MODEL_PATH = ARTIFACTS_DIR / "model_calibrated.joblib"
+SPLIT_DATA_PATH = ARTIFACTS_DIR / "split_data.joblib"
 SHAP_BACKGROUND_PATH = ARTIFACTS_DIR / "shap_background.npy"
 
 # Schema & Dataset Paths

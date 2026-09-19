@@ -1,17 +1,14 @@
-import json
+﻿import sys
 from pathlib import Path
+
+# Dynamically add project root (Axiora) to sys.path so config can be imported
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import json
 import numpy as np
 import pandas as pd
+import config
 
-# Paths
-INPUT_CSV = Path("data/processed/data_cleaned.csv")
-if not INPUT_CSV.exists():
-    INPUT_CSV = Path("data/raw/data_cleaned.csv")
-
-OUTPUT_SCHEMA = Path("data/processed/feature_schema.json")
-OUTPUT_SCHEMA.parent.mkdir(parents=True, exist_ok=True)
-
-# 1. Feature Classification Tiers
 FEATURE_TIERS = {
     "immutable": ["age", "male"],
     "monotonic": ["prevalentStroke", "prevalentHyp", "diabetes"],
@@ -28,7 +25,6 @@ FEATURE_TIERS = {
     ],
 }
 
-# 2. Hard Physiological Boundaries and Max Single-Visit Delta (Delta_max)
 ACTIONABLE_BOUNDS = {
     "sysBP": {
         "min": 95.0,
@@ -113,7 +109,6 @@ def calculate_mad(series: pd.Series) -> float:
     abs_deviations = np.abs(series - median_val)
     mad_val = float(np.median(abs_deviations))
 
-    # Fallback to mean absolute deviation or epsilon if MAD is 0 (e.g. cigsPerDay zero-inflation)
     if mad_val == 0.0:
         mad_val = float(np.mean(abs_deviations))
     if mad_val == 0.0:
@@ -123,12 +118,11 @@ def calculate_mad(series: pd.Series) -> float:
 
 
 def build_schema():
-    if not INPUT_CSV.exists():
-        raise FileNotFoundError(f"Cleaned dataset not found at: {INPUT_CSV.resolve()}")
+    if not config.CLEAN_DATASET_PATH.exists():
+        raise FileNotFoundError(f"Cleaned dataset not found at: {config.CLEAN_DATASET_PATH.resolve()}")
 
-    df = pd.read_csv(INPUT_CSV)
+    df = pd.read_csv(config.CLEAN_DATASET_PATH)
 
-    # Calculate MAD values for distance scaling in DiCE
     mad_dict = {}
     for col in CONTINUOUS_FEATURES:
         mad_dict[col] = calculate_mad(df[col])
@@ -150,10 +144,11 @@ def build_schema():
         },
     }
 
-    with open(OUTPUT_SCHEMA, "w", encoding="utf-8") as f:
+    config.FEATURE_SCHEMA_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(config.FEATURE_SCHEMA_PATH, "w", encoding="utf-8") as f:
         json.dump(schema_payload, f, indent=2)
 
-    print(f"Feature schema successfully exported to: {OUTPUT_SCHEMA}")
+    print(f"Feature schema successfully exported to: {config.FEATURE_SCHEMA_PATH}")
     print(f"MAD scaling factors calculated for {len(mad_dict)} continuous features.")
 
 
