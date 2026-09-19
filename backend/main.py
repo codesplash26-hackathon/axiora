@@ -1,13 +1,26 @@
+﻿from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import config
 
 from backend.api_routes import router
+from backend.pool import get_executor, shutdown_executor
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Pre-initialize process pool workers
+    get_executor()
+    yield
+    # Shutdown: Gracefully stop all child processes
+    shutdown_executor()
+
 
 app = FastAPI(
     title="CardioRecourse API",
     description="Clinical Decision Support Engine with XGBoost, SHAP, and DiCE",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 origins = [
@@ -26,6 +39,7 @@ app.add_middleware(
 )
 
 app.include_router(router)
+
 
 @app.get("/health", tags=["System"])
 async def health_check():
