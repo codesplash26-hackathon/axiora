@@ -24,42 +24,38 @@ const App = () => {
 
       {/* Road Graphic at the bottom */}
       <div className="road-container fade-in-delay">
-        <svg viewBox="0 0 1440 600" preserveAspectRatio="none" className="road-svg">
-          <defs>
-            <linearGradient id="road-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#6ee7b7" stopOpacity="0.9"/>
-              <stop offset="50%" stopColor="#38bdf8" stopOpacity="0.9"/>
-              <stop offset="100%" stopColor="#818cf8" stopOpacity="0.9"/>
-            </linearGradient>
-          </defs>
-
-          {/* Road Outer Edge (White Border) */}
-          <path 
-            d="M -50,550 C 200,550 300,400 550,400 C 800,400 800,200 1050,200 C 1300,200 1350,80 1450,50" 
-            fill="none"
-            stroke="#ffffff"
-            strokeWidth="110"
-            strokeLinecap="round"
+        <svg viewBox="0 0 1440 400" preserveAspectRatio="none" className="road-svg">
+          {/* Road Base */}
+          <path
+            className="road-path"
+            d="M 1440,400 C 1000,400 800,200 400,250 C 200,270 0,200 -100,150 L -100,400 Z"
+            fill="url(#road-gradient)"
           />
-          {/* Road Surface (Gradient) */}
-          <path 
-            d="M -50,550 C 200,550 300,400 550,400 C 800,400 800,200 1050,200 C 1300,200 1350,80 1450,50" 
+          {/* Road Top Edge */}
+          <path
+            className="road-edge"
+            d="M 1440,400 C 1000,400 800,200 400,250 C 200,270 0,200 -100,150"
             fill="none"
-            stroke="url(#road-gradient)"
-            strokeWidth="100"
-            strokeLinecap="round"
+            stroke="#bae6fd"
+            strokeWidth="4"
           />
           {/* Dashed Center Line */}
-          <path 
+          <path
             className="road-dashed"
-            d="M -50,550 C 200,550 300,400 550,400 C 800,400 800,200 1050,200 C 1300,200 1350,80 1450,50" 
+            d="M 1440,420 C 1000,420 800,220 400,270 C 200,290 0,220 -100,170"
             fill="none"
             stroke="#ffffff"
-            strokeWidth="6"
-            strokeDasharray="30 40"
-            strokeLinecap="round"
+            strokeWidth="4"
+            strokeDasharray="20 25"
             filter="drop-shadow(0 0 6px rgba(255,255,255,0.8))"
           />
+          <defs>
+            <linearGradient id="road-gradient" x1="100%" y1="0%" x2="0%" y2="0%">
+              <stop offset="0%" stopColor="#7dd3fc" stopOpacity="0.8" />
+              <stop offset="50%" stopColor="#38bdf8" stopOpacity="0.5" />
+              <stop offset="100%" stopColor="#a7f3d0" stopOpacity="0.8" />
+            </linearGradient>
+          </defs>
         </svg>
 
         {/* Map Pins on the road */}
@@ -153,7 +149,7 @@ const App = () => {
                 <div className="icon-circle bg-blue-light"><Search size={18} color="#0284c7" /></div>
                 <div>
                   <h4 className="card-title">Why this risk?</h4>
-                  <span className="card-subtitle">Key factors contributing<br/>to your risk</span>
+                  <span className="card-subtitle">Key factors contributing<br />to your risk</span>
                 </div>
               </div>
               <div className="factor-list">
@@ -189,13 +185,13 @@ const App = () => {
               <div className="gauge-container">
                 <svg viewBox="0 0 100 55" className="gauge-svg">
                   <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#f1f5f9" strokeWidth="12" strokeLinecap="round" />
-                  <path 
-                    className="gauge-fill" 
-                    d="M 10 45 A 35 35 0 0 1 90 45" 
-                    fill="none" 
-                    stroke="url(#risk-grad)" 
-                    strokeWidth="12" 
-                    strokeLinecap="round" 
+                  <path
+                    className="gauge-fill"
+                    d="M 10 45 A 35 35 0 0 1 90 45"
+                    fill="none"
+                    stroke="url(#risk-grad)"
+                    strokeWidth="12"
+                    strokeLinecap="round"
                   />
                   <defs>
                     <linearGradient id="risk-grad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -216,11 +212,11 @@ const App = () => {
             <div className="glass-card card-pathways floating-anim-3">
               <div className="card-header-clean center">
                 <div className="icon-circle bg-green-light"><ActivitySquare size={16} color="#059669" /></div>
-                <h4 className="card-title">Your Personalized<br/>Recourse Pathways</h4>
+                <h4 className="card-title">Your Personalized<br />Recourse Pathways</h4>
               </div>
               <div className="pathway-list">
                 <div className="pathway-item">
-                  <div className="path-icon bg-teal"><ArrowDown size={16} color="white"/></div>
+                  <div className="path-icon bg-teal"><ArrowDown size={16} color="white" /></div>
                   <div className="path-text">
                     <strong>Lower BP</strong>
                     <span>+6.2% risk reduction</span>
@@ -228,7 +224,7 @@ const App = () => {
                   <ChevronRight size={16} className="path-arrow" />
                 </div>
                 <div className="pathway-item">
-                  <div className="path-icon bg-purple"><Utensils size={16} color="white"/></div>
+                  <div className="path-icon bg-purple"><Utensils size={16} color="white" /></div>
                   <div className="path-text">
                     <strong>Improve Diet</strong>
                     <span>+4.8% risk reduction</span>
@@ -236,7 +232,7 @@ const App = () => {
                   <ChevronRight size={16} className="path-arrow" />
                 </div>
                 <div className="pathway-item">
-                  <div className="path-icon bg-blue"><Activity size={16} color="white"/></div>
+                  <div className="path-icon bg-blue"><Activity size={16} color="white" /></div>
                   <div className="path-text">
                     <strong>Increase Activity</strong>
                     <span>+3.1% risk reduction</span>
