@@ -1,5 +1,4 @@
-from fastapi import APIRouter
-from fastapi.responses import ORJSONResponse
+﻿from fastapi import APIRouter
 
 from backend.schemas import (
     ExplanationResponse,
@@ -11,7 +10,7 @@ from backend.schemas import (
     RecourseResponse,
 )
 
-router = APIRouter(tags=["Clinical Assessment"], default_response_class=ORJSONResponse)
+router = APIRouter(tags=["Clinical Assessment"])
 
 
 @router.post("/predict", response_model=PredictionResponse)
@@ -86,7 +85,7 @@ async def generate_recourse(patient: PatientInputSchema):
             baseline_value=patient.BMI,
             target_value=27.0,
             delta=round(27.0 - patient.BMI, 1),
-            unit="kg/m²",
+            unit="kg/m2",
         ),
         FeatureDelta(
             feature="sysBP",
