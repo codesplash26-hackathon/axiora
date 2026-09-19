@@ -1,7 +1,9 @@
 ﻿import os
+import asyncio
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
-from typing import Optional
+from typing import Optional, Any, Callable
+from functools import partial
 
 # Global pool instance
 _POOL: Optional[ProcessPoolExecutor] = None
@@ -43,3 +45,26 @@ def shutdown_executor():
     if _POOL is not None:
         _POOL.shutdown(wait=True)
         _POOL = None
+
+
+async def run_in_pool(func: Callable, *args: Any, **kwargs: Any) -> Any:
+    """
+    Asynchronously delegates CPU-bound tasks to the ProcessPoolExecutor
+    without blocking the FastAPI asyncio event loop.
+    """
+    loop = asyncio.get_running_loop()
+    executor = get_executor()
+    if kwargs:
+        target = partial(func, *args, **kwargs)
+        return await loop.run_in_executor(executor, target)
+    return await loop.run_in_executor(executor, func, *args)
+
+
+async def warmup_pool(warmup_fn: Callable, sample_payload: Any):
+    """
+    Pre-warms all workers in the pool by executing a dummy inference task.
+    Forces cold process spawning and unpickling during server startup.
+    """
+    workers = get_worker_count()
+    tasks = [run_in_pool(warmup_fn, sample_payload) for _ in range(workers)]
+    await asyncio.gather(*tasks, return_exceptions=True)

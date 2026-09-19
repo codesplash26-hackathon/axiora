@@ -1,158 +1,89 @@
-﻿from fastapi import APIRouter
-
+﻿import asyncio
+from fastapi import APIRouter, HTTPException, status
 from backend.schemas import (
-    ExplanationResponse,
-    FeatureAttribution,
-    FeatureDelta,
     PatientInputSchema,
     PredictionResponse,
-    RecoursePathway,
+    ExplanationResponse,
     RecourseResponse,
 )
+from backend.pool import run_in_pool
+from backend.worker import predict_worker
+import config
 
-router = APIRouter(tags=["Clinical Assessment"])
+router = APIRouter()
 
 
-@router.post("/predict", response_model=PredictionResponse)
+@router.get("/health", tags=["System"])
+async def health_check():
+    return {
+        "status": "healthy",
+        "service": "CardioRecourse API",
+        "model_loaded": config.MODEL_PATH.exists(),
+    }
+
+
+@router.post(
+    "/predict",
+    response_model=PredictionResponse,
+    status_code=status.HTTP_200_OK,
+    tags=["Clinical Inference"],
+)
 async def predict_risk(patient: PatientInputSchema):
-    return PredictionResponse(
-        risk_score=0.428,
-        risk_percentage=42.8,
-        risk_band="High",
-        requires_recourse=True,
-    )
+    """
+    Computes calibrated 10-year cardiovascular disease risk.
+    Dispatches computation to isolated ProcessPoolExecutor worker.
+    Enforces SLA timeout constraint (1.4 seconds).
+    """
+    try:
+        # Offload CPU inference to process pool worker with SLA deadline
+        result = await asyncio.wait_for(
+            run_in_pool(predict_worker, patient.model_dump()),
+            timeout=config.SLA_TIMEOUT_SECONDS,
+        )
+        return PredictionResponse(**result)
+
+    except asyncio.TimeoutError:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=f"Inference exceeded SLA deadline of {config.SLA_TIMEOUT_SECONDS}s",
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Model artifact unavailable: {str(e)}",
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal prediction failure: {str(e)}",
+        )
 
 
-@router.post("/explain", response_model=ExplanationResponse)
+@router.post(
+    "/explain",
+    response_model=ExplanationResponse,
+    status_code=status.HTTP_200_OK,
+    tags=["Explainability"],
+)
 async def explain_risk(patient: PatientInputSchema):
+    """Placeholder route for SHAP attribution (Task B6)."""
     return ExplanationResponse(
-        base_value=0.152,
-        risk_score=0.428,
-        attributions=[
-            FeatureAttribution(
-                feature="sysBP",
-                display_name="Systolic Blood Pressure",
-                attribution_value=0.124,
-                patient_value=patient.sysBP,
-                direction="risk_increasing",
-            ),
-            FeatureAttribution(
-                feature="cigsPerDay",
-                display_name="Cigarettes Per Day",
-                attribution_value=0.086,
-                patient_value=patient.cigsPerDay,
-                direction="risk_increasing",
-            ),
-            FeatureAttribution(
-                feature="totChol",
-                display_name="Total Cholesterol",
-                attribution_value=0.045,
-                patient_value=patient.totChol,
-                direction="risk_increasing",
-            ),
-            FeatureAttribution(
-                feature="age",
-                display_name="Patient Age",
-                attribution_value=0.038,
-                patient_value=float(patient.age),
-                direction="risk_increasing",
-            ),
-            FeatureAttribution(
-                feature="BMI",
-                display_name="Body Mass Index",
-                attribution_value=-0.017,
-                patient_value=patient.BMI,
-                direction="protective",
-            ),
-        ],
+        base_value=0.15,
+        risk_score=0.22,
+        attributions=[],
     )
 
 
-@router.post("/recourse", response_model=RecourseResponse)
+@router.post(
+    "/recourse",
+    response_model=RecourseResponse,
+    status_code=status.HTTP_200_OK,
+    tags=["Recourse"],
+)
 async def generate_recourse(patient: PatientInputSchema):
-    lifestyle_changes = [
-        FeatureDelta(
-            feature="cigsPerDay",
-            display_name="Cigarettes Per Day",
-            baseline_value=patient.cigsPerDay,
-            target_value=0.0,
-            delta=-patient.cigsPerDay,
-            unit="cigs/day",
-        ),
-        FeatureDelta(
-            feature="BMI",
-            display_name="Body Mass Index",
-            baseline_value=patient.BMI,
-            target_value=27.0,
-            delta=round(27.0 - patient.BMI, 1),
-            unit="kg/m2",
-        ),
-        FeatureDelta(
-            feature="sysBP",
-            display_name="Systolic Blood Pressure",
-            baseline_value=patient.sysBP,
-            target_value=140.0,
-            delta=round(140.0 - patient.sysBP, 1),
-            unit="mmHg",
-        ),
-    ]
-
-    medication_changes = [
-        FeatureDelta(
-            feature="sysBP",
-            display_name="Systolic Blood Pressure",
-            baseline_value=patient.sysBP,
-            target_value=130.0,
-            delta=round(130.0 - patient.sysBP, 1),
-            unit="mmHg",
-        ),
-        FeatureDelta(
-            feature="totChol",
-            display_name="Total Cholesterol",
-            baseline_value=patient.totChol,
-            target_value=195.0,
-            delta=round(195.0 - patient.totChol, 1),
-            unit="mg/dL",
-        ),
-        FeatureDelta(
-            feature="BPMeds",
-            display_name="Blood Pressure Medication",
-            baseline_value=patient.BPMeds,
-            target_value=1.0,
-            delta=1.0 - patient.BPMeds,
-            unit="status",
-        ),
-    ]
-
+    """Placeholder route for DiCE counterfactual recourse (Task B7)."""
     return RecourseResponse(
-        patient_baseline_risk=0.428,
-        pathways=[
-            RecoursePathway(
-                pathway_id=1,
-                title="Lifestyle-Led Optimization",
-                projected_risk_score=0.185,
-                projected_risk_percentage=18.5,
-                absolute_risk_reduction=24.3,
-                changes=lifestyle_changes,
-                full_target_vector={
-                    "sysBP": 140.0,
-                    "cigsPerDay": 0.0,
-                    "BMI": 27.0,
-                },
-            ),
-            RecoursePathway(
-                pathway_id=2,
-                title="Medication-Led Optimization",
-                projected_risk_score=0.162,
-                projected_risk_percentage=16.2,
-                absolute_risk_reduction=26.6,
-                changes=medication_changes,
-                full_target_vector={
-                    "sysBP": 130.0,
-                    "totChol": 195.0,
-                    "BPMeds": 1.0,
-                },
-            ),
-        ],
+        patient_baseline_risk=0.22,
+        pathways=[],
         is_fallback=False,
     )

@@ -3,7 +3,7 @@ import pandas as pd
 from typing import Dict, Any, Optional
 import config
 
-# Process-level model cache (persists within each isolated worker process)
+# Process-level model cache (persists within each child worker process)
 _MODEL: Optional[Any] = None
 
 CANONICAL_COLUMNS = [
@@ -34,42 +34,44 @@ def get_model():
     return _MODEL
 
 
-def determine_triage_band(risk_score: float) -> str:
+def determine_risk_band(risk_score: float) -> str:
     """
-    Standard ACC/AHA clinical 10-year cardiovascular risk stratification:
-    - < 10%: Low Risk
-    - 10% - 20%: Moderate Risk
-    - >= 20%: High Risk
+    Categorizes risk according to ACC/AHA guidelines:
+    - < 10%: Low
+    - 10% - 20%: Borderline
+    - >= 20%: High
     """
     if risk_score < 0.10:
         return "Low"
     elif risk_score < 0.20:
-        return "Moderate"
+        return "Borderline"
     else:
         return "High"
 
 
 def predict_worker(patient_dict: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Synchronous worker routine dispatched to ProcessPoolExecutor.
+    Synchronous worker routine executed within ProcessPoolExecutor.
     1. Loads or reuses cached calibrated model.
-    2. Maps patient dict to the aligned 14-biomarker feature vector.
-    3. Computes calibrated probability and assigns the clinical triage band.
+    2. Maps incoming patient dict to canonical 14-feature order.
+    3. Computes calibrated probability and formats the PredictionResponse payload.
     """
     model = get_model()
 
-    # Align input to exact canonical column ordering
+    # Align input to canonical column ordering
     row_values = [patient_dict[col] for col in CANONICAL_COLUMNS]
     input_df = pd.DataFrame([row_values], columns=CANONICAL_COLUMNS)
 
     # Compute calibrated probability of TenYearCHD (Class 1)
     probabilities = model.predict_proba(input_df)
     risk_score = round(float(probabilities[0, 1]), 4)
-    triage_band = determine_triage_band(risk_score)
+    risk_percentage = round(risk_score * 100.0, 2)
+    risk_band = determine_risk_band(risk_score)
+    requires_recourse = bool(risk_score >= 0.20)
 
     return {
         "risk_score": risk_score,
-        "triage_band": triage_band,
-        "calibrated": True,
-        "model_version": "1.0.0",
+        "risk_percentage": risk_percentage,
+        "risk_band": risk_band,
+        "requires_recourse": requires_recourse,
     }
