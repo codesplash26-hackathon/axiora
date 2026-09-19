@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import heartImg from './assets/shiny_tech_heart.jpg';
-import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, ArrowDown, ActivitySquare, GitMerge } from 'lucide-react';
+import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, ArrowDown, ActivitySquare, GitMerge, ChevronRight } from 'lucide-react';
 
 const App = () => {
   const [mounted, setMounted] = useState(false);
