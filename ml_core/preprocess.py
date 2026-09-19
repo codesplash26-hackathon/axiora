@@ -1,17 +1,13 @@
-import json
+﻿import sys
 from pathlib import Path
+
+# Dynamically add project root (Axiora) to sys.path so config can be imported
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import json
 import numpy as np
 import pandas as pd
-
-# Define paths relative to the project root (C:\Backup\Axiora\axiora)
-DATA_DIR = Path("data")
-ARTIFACTS_DIR = Path("artifacts")
-ARTIFACTS_DIR.mkdir(exist_ok=True)
-
-# Updated raw input path
-INPUT_CSV = DATA_DIR / "raw" / "framingham.csv"
-OUTPUT_CSV = DATA_DIR / "data_cleaned.csv"
-OUTPUT_SUMMARY = ARTIFACTS_DIR / "data_summary.json"
+import config
 
 BINARY_COLS = [
     "male",
@@ -36,11 +32,14 @@ CONTINUOUS_COLS = [
 
 
 def clean_dataset():
-    if not INPUT_CSV.exists():
-        raise FileNotFoundError(f"Source file not found at: {INPUT_CSV.resolve()}")
+    if not config.RAW_DATASET_PATH.exists():
+        raise FileNotFoundError(f"Source file not found at: {config.RAW_DATASET_PATH.resolve()}")
+
+    config.PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    config.ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 
     # 1. Load raw dataset
-    df = pd.read_csv(INPUT_CSV)
+    df = pd.read_csv(config.RAW_DATASET_PATH)
 
     # 2. Remove non-physiological socioeconomic column
     if "education" in df.columns:
@@ -71,7 +70,7 @@ def clean_dataset():
         df[col] = df[col].astype(int)
 
     # 6. Save clean dataset
-    df.to_csv(OUTPUT_CSV, index=False)
+    df.to_csv(config.CLEAN_DATASET_PATH, index=False)
 
     # 7. Save metadata and baseline statistics
     summary = {
@@ -84,11 +83,12 @@ def clean_dataset():
         "population_stds": stds,
     }
 
-    with open(OUTPUT_SUMMARY, "w", encoding="utf-8") as f:
+    summary_path = getattr(config, "DATA_SUMMARY_PATH", config.ARTIFACTS_DIR / "data_summary.json")
+    with open(summary_path, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
 
-    print(f"Dataset successfully cleaned: {OUTPUT_CSV} ({df.shape[0]} rows, {df.shape[1]} cols)")
-    print(f"Baseline summary exported: {OUTPUT_SUMMARY}")
+    print(f"Dataset successfully cleaned: {config.CLEAN_DATASET_PATH} ({df.shape[0]} rows, {df.shape[1]} cols)")
+    print(f"Baseline summary exported: {summary_path}")
 
 
 if __name__ == "__main__":
