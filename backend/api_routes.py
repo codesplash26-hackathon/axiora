@@ -51,3 +51,39 @@ async def explain_risk(patient: PatientInputSchema):
             },
         ],
     )
+
+
+@router.post("/recourse", response_model=RecourseResponse)
+async def generate_recourse(patient: PatientInputSchema):
+    return RecourseResponse(
+        pathways=[
+            {
+                "strategy_label": "Lifestyle-Led",
+                "projected_risk": 0.185,
+                "target_features": {
+                    "cigsPerDay": 0.0,
+                    "BMI": 29.0,
+                    "sysBP": 154.0,
+                },
+                "deltas": {
+                    "cigsPerDay": -20.0,
+                    "BMI": -2.4,
+                    "sysBP": -14.0,
+                },
+            },
+            {
+                "strategy_label": "Medication-Led",
+                "projected_risk": 0.172,
+                "target_features": {
+                    "sysBP": 140.0,
+                    "totChol": 239.0,
+                    "BPMeds": 1,
+                },
+                "deltas": {
+                    "sysBP": -28.0,
+                    "totChol": -45.0,
+                    "BPMeds": 1,
+                },
+            },
+        ]
+    )
