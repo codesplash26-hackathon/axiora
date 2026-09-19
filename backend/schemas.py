@@ -1,6 +1,9 @@
 from pydantic import BaseModel, Field, model_validator
-from typing import Literal
+from typing import Literal, List
 
+# ==========================================
+# 1. Inbound Patient Payload Contract
+# ==========================================
 class PatientInputSchema(BaseModel):
     # Demographics & Immutable Markers
     male: int = Field(..., ge=0, le=1, description="Biological sex: 1 for male, 0 for female")
@@ -31,23 +34,28 @@ class PatientInputSchema(BaseModel):
             raise ValueError("cigsPerDay must be greater than 0 if currentSmoker is 1.")
         return self
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "male": 1,
-                "age": 62,
-                "currentSmoker": 1,
-                "cigsPerDay": 20.0,
-                "BPMeds": 0.0,
-                "prevalentStroke": 0,
-                "prevalentHyp": 1,
-                "diabetes": 0,
-                "totChol": 255.0,
-                "sysBP": 165.0,
-                "diaBP": 95.0,
-                "BMI": 29.5,
-                "heartRate": 82.0,
-                "glucose": 88.0,
-            }
-        }
-    }
+
+# ==========================================
+# 2. Outbound Prediction Contract
+# ==========================================
+class PredictionResponse(BaseModel):
+    risk_score: float = Field(..., ge=0.0, le=1.0, description="Calibrated 10-year CHD probability")
+    risk_percentage: float = Field(..., ge=0.0, le=100.0, description="Display percentage (0 to 100)")
+    risk_band: Literal["Low", "Borderline", "High"] = Field(..., description="Triage category")
+    requires_recourse: bool = Field(..., description="True if risk >= 20% requiring counterfactual search")
+
+
+# ==========================================
+# 3. Outbound Diagnostic Explanation Contract
+# ==========================================
+class FeatureAttribution(BaseModel):
+    feature: str = Field(..., description="Raw column name (e.g., sysBP)")
+    display_name: str = Field(..., description="Plain-language clinical label")
+    attribution_value: float = Field(..., description="SHAP attribution value (positive or negative)")
+    patient_value: float = Field(..., description="Patient baseline value for this feature")
+    direction: Literal["risk_increasing", "protective"] = Field(..., description="Impact direction on risk")
+
+class ExplanationResponse(BaseModel):
+    base_value: float = Field(..., description="Population baseline expected risk")
+    risk_score: float = Field(..., ge=0.0, le=1.0, description="Individual calibrated risk score")
+    attributions: List[FeatureAttribution] = Field(..., description="Ranked feature attributions")
