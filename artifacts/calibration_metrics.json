@@ -1,0 +1,33 @@
+{
+  "brier_score": 0.1196,
+  "brier_ceiling": 0.13,
+  "ece": 0.009,
+  "roc_auc": 0.6858,
+  "deciles": [
+    {
+      "bin": 1,
+      "mean_predicted_prob": 0.0745,
+      "observed_event_rate": 0.0704,
+      "gap": 0.0041
+    },
+    {
+      "bin": 2,
+      "mean_predicted_prob": 0.1467,
+      "observed_event_rate": 0.1413,
+      "gap": 0.0054
+    },
+    {
+      "bin": 3,
+      "mean_predicted_prob": 0.2443,
+      "observed_event_rate": 0.2564,
+      "gap": 0.0122
+    },
+    {
+      "bin": 4,
+      "mean_predicted_prob": 0.3355,
+      "observed_event_rate": 0.4,
+      "gap": 0.0645
+    }
+  ],
+  "clinical_readiness": "PASSED"
+}

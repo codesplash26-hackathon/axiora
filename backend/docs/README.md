@@ -1,56 +1,97 @@
 # Backend Engineering Documentation: Current Progress & Architecture
 
 > **Service**: `CardioRecourse API`  
-> **Status**: Milestone B0 / B1 Base Skeleton Operational  
-> **Primary File**: [`backend/main.py`](file:///d:/CodeSplash/Axiora/backend/main.py)  
-> **Framework**: FastAPI (v0.141+) on Uvicorn (v0.53+) with ORJSON  
+> **Status**: Milestone B0 (Skeleton) & Milestone B1 (Pydantic Contracts) **COMPLETED**  
+> **Primary Files**:  
+> - Application Factory: [`backend/main.py`](file:///d:/CodeSplash/Axiora/backend/main.py)  
+> - Pydantic Data Contracts: [`backend/schemas.py`](file:///d:/CodeSplash/Axiora/backend/schemas.py)  
+> - Contract Test Suite: [`tests/test_schemas.py`](file:///d:/CodeSplash/Axiora/tests/test_schemas.py)  
+> **Framework**: FastAPI (v0.141+) on Uvicorn (v0.53+) with Pydantic V2 & ORJSON  
 
 ---
 
 ## 1. What Has Been Implemented So Far
 
-The foundational backend infrastructure has been stood up, configured, and verified.
+The foundational backend microservice and the immutable Pydantic V2 data contracts have been built, strictly validated, and verified through unit tests.
 
 ### 1.1 Core Application Factory ([`backend/main.py`](file:///d:/CodeSplash/Axiora/backend/main.py))
 - **FastAPI Instance**: Instantiated with OpenAPI metadata (`title="CardioRecourse API"`, `version="1.0.0"`).
-- **ORJSON Default Serialization**: Configured with `default_response_class=ORJSONResponse` for ultra-fast, C-optimized JSON serialization and deserialization, essential for low-latency transmission of large numeric arrays (SHAP attributions and DiCE counterfactual matrices).
-- **CORS Middleware**: Activated via `CORSMiddleware` with explicit support for frontend Vite dev origins:
-  - `http://localhost:5173`
-  - `http://127.0.0.1:5173`
-  - Permissive methods (`allow_methods=["*"]`) and headers (`allow_headers=["*"]`) to support preflight `OPTIONS` requests during local development.
+- **ORJSON Serialization**: Defaulted to `ORJSONResponse` for C-optimized serialization speed.
+- **CORS Middleware**: Pre-configured to allow frontend Vite dev servers (`http://localhost:5173`, `http://127.0.0.1:5173`).
+- **Health Endpoint**: `GET /health` responding with service status and `SLA_TIMEOUT_SECONDS = 1.4`.
 
-### 1.2 Centralized Configuration Integration ([`config.py`](file:///d:/CodeSplash/Axiora/config.py))
-- The application dynamically imports runtime constants from `config.py`:
-  - `HOST`: `"127.0.0.1"`
-  - `PORT`: `8000`
-  - `SLA_TIMEOUT_SECONDS`: `1.4` (Strict SLA latency ceiling for the diagnostic pipeline)
+---
 
-### 1.3 Health & Diagnostic Endpoint
-- **Route**: `GET /health`
-- **Tag**: `["System"]`
-- **Output Contract**:
-  ```json
-  {
-    "status": "online",
-    "service": "CardioRecourse API",
-    "sla_timeout_seconds": 1.4
-  }
-  ```
-- **Verification**: Verifies that the Uvicorn event loop is active and configuration bounds are loaded.
+### 1.2 Pydantic V2 Data Contracts ([`backend/schemas.py`](file:///d:/CodeSplash/Axiora/backend/schemas.py))
+The data contracts establish the immutable specification linking Track A (ML Core), Track B (Backend), and Track C (Frontend).
 
-### 1.4 Pinned Dependencies & Environment
-- Environment is pinned in `requirements.txt` and verified within the project virtualenv:
-  - `fastapi>=0.110.0` (active: `0.141.1`)
-  - `uvicorn[standard]>=0.28.0` (active: `0.53.0`)
-  - `pydantic>=2.6.0` (active: `2.13.5`)
-  - `orjson>=3.9.0` (active: `3.12.0`)
-  - `httpx>=0.27.0` (active: `0.28.1`)
+```
+                      [ PatientInputSchema ]
+                                 │
+                   (POST /predict, /explain, /recourse)
+                                 │
+         ┌───────────────────────┼───────────────────────┐
+         ▼                       ▼                       ▼
+[ PredictionResponse ]  [ ExplanationResponse ]  [ RecourseResponse ]
+  - risk_score            - base_value             - patient_baseline_risk
+  - risk_percentage       - risk_score             - pathways [
+  - risk_band             - attributions [             RecoursePathway:
+  - requires_recourse         FeatureAttribution:        - title ("Lifestyle-Led")
+                                - feature                - projected_risk_score
+                                - display_name           - absolute_risk_reduction
+                                - attribution_value      - changes [FeatureDelta]
+                                - direction              - full_target_vector
+                              ]                        ]
+                                                   - is_fallback
+```
+
+#### 1. Inbound Patient Biomarker Contract (`PatientInputSchema`)
+Validates incoming patient records across 14 canonical Framingham features with strict biological bounds:
+- **Demographics & Binary History**: `male` (`0|1`), `age` (`20–100`), `BPMeds` (`0.0|1.0`), `prevalentStroke` (`0|1`), `prevalentHyp` (`0|1`), `diabetes` (`0|1`).
+- **Continuous Clinical Biomarkers**:
+  - `sysBP`: Systolic blood pressure (`95.0 – 295.0 mmHg`)
+  - `diaBP`: Diastolic blood pressure (`50.0 – 160.0 mmHg`)
+  - `totChol`: Total serum cholesterol (`100.0 – 600.0 mg/dL`)
+  - `BMI`: Body Mass Index (`15.0 – 55.0 kg/m²`)
+  - `heartRate`: Resting heart rate (`40.0 – 180.0 bpm`)
+  - `glucose`: Fasting blood glucose (`40.0 – 400.0 mg/dL`)
+- **Cross-Field Biological Coherence Validator (`validate_smoking_coherence`)**:
+  - Enforces physiological coherence via `@model_validator(mode="after")`:
+    - Non-smokers (`currentSmoker == 0`) must have `cigsPerDay == 0`.
+    - Active smokers (`currentSmoker == 1`) must have `cigsPerDay > 0`.
+
+#### 2. Outbound Prediction Contract (`PredictionResponse`)
+- `risk_score`: Calibrated 10-year hard CHD probability $\in [0.0, 1.0]$.
+- `risk_percentage`: Percentage formatted float $\in [0.0, 100.0]$.
+- `risk_band`: Triage category (`"Low"` $<10\%$, `"Borderline"` $10\%-19.9\%$, `"High"` $\ge 20\%$).
+- `requires_recourse`: Boolean flag (`True` if `risk_score >= 0.20`, gating downstream DiCE recourse calculations).
+
+#### 3. Outbound Diagnostic Explanation Contract (`ExplanationResponse`)
+- Encapsulates local SHAP feature attributions sorted by impact:
+  - `FeatureAttribution`: Pairs raw column keys (`sysBP`) with clinical labels (`display_name: "Systolic Blood Pressure"`), the continuous attribution value ($\phi_j$), patient baseline reading, and impact direction (`"risk_increasing"` vs `"protective"`).
+
+#### 4. Outbound Prescriptive Recourse Contract (`RecourseResponse`)
+- Supports multi-pathway side-by-side clinical comparisons:
+  - `FeatureDelta`: Itemized biomarker recommendations detailing `baseline_value`, `target_value`, signed `delta` ($target - baseline$), and measurement `unit`.
+  - `RecoursePathway`: Represents a distinct clinical strategy (`title: "Lifestyle-Led"` vs `"Medication-Led"`), with `projected_risk_score`, `absolute_risk_reduction` (in percentage points), list of `changes`, and `full_target_vector`.
+  - `RecourseResponse`: Bundles candidate pathways alongside `is_fallback` indicator (notifying the clinician if the 1.4s SLA random fallback solver was triggered).
+
+---
+
+### 1.3 Contract Test Suite ([`tests/test_schemas.py`](file:///d:/CodeSplash/Axiora/tests/test_schemas.py))
+A dedicated Pytest test suite validates schema enforcement and error handling:
+- **`test_valid_patient_schema`**: Confirms valid 14-biomarker patient vectors instantiate without errors.
+- **`test_sysbp_out_of_bounds_fails`**: Asserts that unphysiological values (e.g. `sysBP = 450.0 mmHg`) raise a Pydantic `ValidationError`.
+- **`test_smoking_coherence_non_smoker_with_cigarettes`**: Rejects incoherent states (`currentSmoker = 0` with `cigsPerDay = 10.0`).
+- **`test_smoking_coherence_smoker_with_zero_cigarettes`**: Rejects incoherent states (`currentSmoker = 1` with `cigsPerDay = 0.0`).
+- **`test_prediction_response_schema`**: Confirms triage gating logic (`requires_recourse = True` on high risk).
+- **`test_recourse_response_schema`**: Validates deeply nested counterfactual pathway response models and delta calculations.
 
 ---
 
 ## 2. Immediate Next Steps & Planned Architecture
 
-The backend will be expanded across Track B according to [ARCHITECTURE.md](file:///d:/CodeSplash/Axiora/ARCHITECTURE.md) and [TASK_BOARD.md](file:///d:/CodeSplash/Axiora/TASK_BOARD.md):
+With Task B1 complete, the backend roadmap continues along Track B:
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -68,18 +109,21 @@ The backend will be expanded across Track B according to [ARCHITECTURE.md](file:
     └─────────────────┘
 ```
 
-1. **Task B1 (Pydantic v2 Contracts)**: Implement `backend/schemas.py` declaring the strict 15-feature canonical input model (`PatientBiomarkerInput`), `PredictionResponse`, `ExplanationResponse`, `RecourseResponse`, and composite `AssessmentResponse`.
-2. **Task B2 & B4 (ProcessPool Concurrency)**: Implement `backend/pool.py` with `OMP_NUM_THREADS=1` and `MKL_NUM_THREADS=1` to isolate CPU-intensive SHAP and DiCE calculations from blocking the async event loop.
-3. **Task B3 (Stateless De-identification)**: Implement `backend/security.py` to strip direct identifiers and enforce physiological boundary filters (HIPAA Safe Harbor / Sri Lanka PDPA No. 9 of 2022).
-4. **Task B5 - B8 (REST Endpoints)**: Mount `/predict`, `/explain`, `/recourse`, and the composite `/assess` endpoint with the 1.4-second watchdog timeout.
+1. **Task B2 (Mock REST Endpoints)**: Scaffold mock endpoints for `/predict`, `/explain`, and `/recourse` using `schemas.py` to immediately unblock Track C (Frontend) development.
+2. **Task B3 & B4 (ProcessPool Concurrency & Worker Pre-warming)**: Create `backend/pool.py` with `OMP_NUM_THREADS=1` and `worker.py` to isolate CPU-intensive SHAP/DiCE computations from the async event loop.
+3. **Task B5 - B8 (Live REST Pipeline & SLA Guard)**: Wire up live models into endpoints and create the composite `/assess` route with the 1.4-second SLA watchdog failover.
 
 ---
 
 ## 3. How to Run & Verify the Backend
 
+### Run Schema Contract Tests:
+```powershell
+pytest tests/test_schemas.py -v
+```
+
 ### Start Server (Development Mode):
 ```powershell
-# From project root
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
@@ -89,5 +133,5 @@ python -c "from fastapi.testclient import TestClient; from backend.main import a
 ```
 
 ### Interactive Documentation:
-Once running, inspect and test endpoints via Swagger UI:
+Inspect and test endpoints via Swagger UI:
 👉 **`http://127.0.0.1:8000/docs`**
