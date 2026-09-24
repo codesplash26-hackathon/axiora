@@ -142,13 +142,21 @@ def get_genetic_explainer() -> dice_ml.Dice:
 
 
 def format_query_instance(patient_dict: Dict[str, Any]) -> pd.DataFrame:
-    """Format input dictionary into a canonical single-row DataFrame."""
+    """Format input dictionary into a canonical single-row DataFrame with correct dtypes."""
+    schema = load_schema()
+    feature_types = schema.get("feature_types", {})
+
     row = {}
     for col in CANONICAL_FEATURES:
         if col not in patient_dict:
             raise ValueError(f"Missing clinical biomarker: '{col}'")
-        row[col] = float(patient_dict[col])
+        f_type = feature_types.get(col, "continuous")
+        if f_type == "binary":
+            row[col] = int(patient_dict[col])
+        else:
+            row[col] = float(patient_dict[col])
     return pd.DataFrame([row], columns=CANONICAL_FEATURES)
+
 
 
 if __name__ == "__main__":
