@@ -1,19 +1,20 @@
-﻿from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import config
 
 from backend.api_routes import router
-from backend.pool import get_executor, shutdown_executor
+from backend.pool import init_pool, shutdown_pool
+from backend.privacy_middleware import PrivacySanitizationMiddleware
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Pre-initialize process pool workers
-    get_executor()
+    # Startup: Pre-initialize process pool workers with ML pre-warming
+    init_pool()
     yield
     # Shutdown: Gracefully stop all child processes
-    shutdown_executor()
+    shutdown_pool()
 
 
 app = FastAPI(
@@ -37,6 +38,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(PrivacySanitizationMiddleware)
 
 app.include_router(router)
 

@@ -1,12 +1,12 @@
 from pydantic import BaseModel, Field, model_validator
-from typing import Literal, List, Dict
+from typing import Literal, List, Dict, Optional
 
 # ==========================================
 # 1. Inbound Patient Payload Contract
 # ==========================================
 class PatientInputSchema(BaseModel):
     male: int = Field(..., ge=0, le=1, description="Biological sex: 1 for male, 0 for female")
-    age: int = Field(..., ge=20, le=100, description="Chronological age in years")
+    age: float = Field(..., ge=18.0, le=120.0, description="Chronological age in years")
     currentSmoker: int = Field(..., ge=0, le=1, description="Smoking status: 1 if currently smoking, 0 otherwise")
     cigsPerDay: float = Field(default=0.0, ge=0.0, le=70.0, description="Average cigarettes smoked per day")
     BPMeds: float = Field(default=0.0, ge=0.0, le=1.0, description="Currently on blood pressure medication: 1.0 or 0.0")
@@ -49,6 +49,7 @@ class FeatureAttribution(BaseModel):
     patient_value: float = Field(..., description="Patient baseline value for this feature")
     direction: Literal["risk_increasing", "protective"] = Field(..., description="Impact direction on risk")
 
+
 class ExplanationResponse(BaseModel):
     base_value: float = Field(..., description="Population baseline expected risk")
     risk_score: float = Field(..., ge=0.0, le=1.0, description="Individual calibrated risk score")
@@ -66,6 +67,7 @@ class FeatureDelta(BaseModel):
     delta: float = Field(..., description="Numerical difference (target - baseline)")
     unit: str = Field(..., description="Measurement unit (e.g., mmHg, mg/dL)")
 
+
 class RecoursePathway(BaseModel):
     pathway_id: int = Field(..., description="Identifier index (1, 2, or 3)")
     title: str = Field(..., description="Pathway strategy label (e.g., Lifestyle-Led)")
@@ -74,6 +76,7 @@ class RecoursePathway(BaseModel):
     absolute_risk_reduction: float = Field(..., description="Absolute drop in percentage points")
     changes: List[FeatureDelta] = Field(..., description="Itemized list of required changes")
     full_target_vector: Dict[str, float] = Field(..., description="Complete feature map with targets applied")
+
 
 class RecourseResponse(BaseModel):
     patient_baseline_risk: float = Field(..., ge=0.0, le=1.0, description="Initial calibrated risk score")

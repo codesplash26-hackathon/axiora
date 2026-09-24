@@ -1,85 +1,211 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import './App.css';
-import heartBg from './assets/heart_bg.png';
-
-const HeartIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    className="input-icon"
-  >
-    <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
-  </svg>
-);
+import heartImg from './assets/shiny_tech_heart.jpg';
+import { Activity, Brain, Search, Map, Heart, ArrowRight, Play, ChevronRight, Droplets, Target, Zap, ActivitySquare } from 'lucide-react';
 
 const App = () => {
-  return (
-    <div className="app-container">
-      {/* Navbar */}
-      <nav className="navbar">
-        <div className="navbar-logo">ML FOR HEART DISEASE</div>
-        <div className="navbar-links">
-          <a href="#logout">LOGOUT</a>
-          <a href="#advanced">ADVANCED</a>
-        </div>
-      </nav>
+  const [mounted, setMounted] = useState(false);
 
-      {/* Hero Section */}
-      <section className="hero-section" style={{ backgroundImage: `url(${heartBg})` }}>
-        <div className="hero-overlay">
-          <div className="hero-content">
-            <h1 className="hero-title">EXAMINING YOUR HEARTS !</h1>
-            <p className="hero-description">
-              The goal of this project is to train a machine learning model to accurately predict
-              whether a sample patient has been diagnosed with heart disease, with higher
-              accuracy possible.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  return (
+    <div className={`landing-container ${mounted ? 'mounted' : ''}`}>
+      {/* Abstract Pathway Background */}
+      <div className="path-background">
+        <svg viewBox="0 0 1440 800" preserveAspectRatio="none" className="path-svg">
+          <path 
+            className="path-line" 
+            d="M -100,700 C 300,700 500,400 900,350 C 1200,300 1400,100 1600,50" 
+          />
+          <path 
+            className="path-line glow" 
+            d="M -100,700 C 300,700 500,400 900,350 C 1200,300 1400,100 1600,50" 
+          />
+        </svg>
+      </div>
+
+      <div className="hero-content">
+        {/* LEFT COLUMN */}
+        <div className="hero-left">
+          <header className="brand-header fade-up-1">
+            <div className="logo-icon-wrapper">
+              <Heart className="logo-heart" size={32} />
+              <Activity className="logo-ecg" size={16} />
+            </div>
+            <div className="brand-text">
+              <span className="brand-name">CardioRecourse</span>
+            </div>
+          </header>
+
+          <div className="hero-text-block">
+            <h2 className="subtitle fade-up-2">
+              Explainable AI for Smarter Cardiovascular Risk Reduction
+            </h2>
+            <h1 className="main-headline fade-up-3">
+              Your Risk, <span className="highlight-text">Explained.</span>
+            </h1>
+            <p className="description fade-up-4">
+              Understand what drives cardiovascular risk. Explore personalized pathways to reduce it.
             </p>
-            <div className="hero-buttons">
-              <button className="btn btn-primary">CHECK YOUR HEART</button>
-              <button className="btn btn-secondary">KNOW MORE</button>
+
+            <div className="cta-group fade-up-5">
+              <button className="btn-primary">
+                Explore CardioRecourse <ArrowRight size={18} className="btn-icon" />
+              </button>
+              <button className="btn-secondary">
+                <Play size={18} fill="currentColor" className="btn-icon-play" /> View Demo
+              </button>
+            </div>
+
+            <div className="credibility fade-up-6">
+              A product of <strong>Axiora</strong> <span className="dot-separator">·</span> University of Moratuwa
             </div>
           </div>
         </div>
-      </section>
 
-      {/* Data Section */}
-      <section className="data-section">
-        <h2 className="data-title">HEART'S DATA</h2>
-        <p className="data-subtitle">Input your data here</p>
+        {/* RIGHT COLUMN */}
+        <div className="hero-right fade-in-delay">
+          <div className="visual-centerpiece">
+            
+            {/* Heart 3D Visual */}
+            <div className="heart-wrapper heartbeat-anim">
+              <img src={heartImg} alt="CardioRecourse Heart" className="heart-img" />
+            </div>
 
-        <form className="data-form">
-          <div className="form-grid">
-            {[
-              'age',
-              'sex',
-              'chest pain',
-              'blood pressure',
-              'serum cholestoral',
-              'fasting blood sugar',
-              'electrocardiographic',
-              'max heart rate',
-              'induced angina',
-              'ST depression',
-              'slope',
-              'vessels',
-              'thal',
-            ].map((label, index) => (
-              <div className="input-group" key={index}>
-                <div className="icon-container">
-                  <HeartIcon />
-                </div>
-                <input type="text" placeholder={label} className="form-input" />
+            {/* Floating Card 1: Explainability */}
+            <div className="glass-card card-explain floating-anim-1">
+              <div className="card-header">
+                <div className="card-icon blue-bg"><Search size={16} /></div>
+                <h4 className="card-title">Your Risk, Explained</h4>
               </div>
-            ))}
+              <div className="factor-bars">
+                <div className="factor">
+                  <div className="factor-info"><span>Blood Pressure</span><span className="val">+32%</span></div>
+                  <div className="bar-bg"><div className="bar-fill red" style={{width: '75%'}}></div></div>
+                </div>
+                <div className="factor">
+                  <div className="factor-info"><span>Cholesterol</span><span className="val">+24%</span></div>
+                  <div className="bar-bg"><div className="bar-fill orange" style={{width: '60%'}}></div></div>
+                </div>
+                <div className="factor">
+                  <div className="factor-info"><span>Age</span><span className="val">+18%</span></div>
+                  <div className="bar-bg"><div className="bar-fill teal" style={{width: '45%'}}></div></div>
+                </div>
+                <div className="factor">
+                  <div className="factor-info"><span>Smoking</span><span className="val">+12%</span></div>
+                  <div className="bar-bg"><div className="bar-fill purple" style={{width: '30%'}}></div></div>
+                </div>
+                <div className="factor">
+                  <div className="factor-info"><span>BMI</span><span className="val">+8%</span></div>
+                  <div className="bar-bg"><div className="bar-fill blue" style={{width: '20%'}}></div></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating Card 2: Risk Overview */}
+            <div className="glass-card card-risk floating-anim-2">
+              <h4 className="card-title text-center">10-Year Cardiovascular Risk</h4>
+              <div className="gauge-container">
+                <svg viewBox="0 0 100 55" className="gauge-svg">
+                  <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#f1f5f9" strokeWidth="8" strokeLinecap="round" />
+                  <path 
+                    className="gauge-fill" 
+                    d="M 10 45 A 35 35 0 0 1 90 45" 
+                    fill="none" 
+                    stroke="url(#risk-grad)" 
+                    strokeWidth="8" 
+                    strokeLinecap="round" 
+                  />
+                  <defs>
+                    <linearGradient id="risk-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#06b6d4" />
+                      <stop offset="60%" stopColor="#8b5cf6" />
+                      <stop offset="100%" stopColor="#f43f5e" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="gauge-text">
+                  <span className="gauge-value">18.7%</span>
+                  <span className="gauge-label elevated">Elevated Risk</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating Card 3: Pathways */}
+            <div className="glass-card card-pathways floating-anim-3">
+              <div className="card-header">
+                <div className="card-icon teal-bg"><Map size={16} /></div>
+                <h4 className="card-title">Personalized Pathways</h4>
+              </div>
+              <div className="pathway-list">
+                <div className="pathway-item">
+                  <div className="path-icon red-light"><Target size={16}/></div>
+                  <div className="path-text">Improve Blood Pressure</div>
+                  <ChevronRight size={16} className="path-arrow" />
+                </div>
+                <div className="pathway-item">
+                  <div className="path-icon teal-light"><Droplets size={16}/></div>
+                  <div className="path-text">Improve Lifestyle</div>
+                  <ChevronRight size={16} className="path-arrow" />
+                </div>
+                <div className="pathway-item">
+                  <div className="path-icon purple-light"><Zap size={16}/></div>
+                  <div className="path-text">Increase Physical Activity</div>
+                  <ChevronRight size={16} className="path-arrow" />
+                </div>
+              </div>
+            </div>
+
           </div>
-          <div className="form-actions">
-            <button type="button" className="btn btn-analyze">
-              ANALYZE
-            </button>
+        </div>
+      </div>
+
+      {/* XAI FEATURE STRIP */}
+      <div className="feature-strip-wrapper fade-up-7">
+        <div className="feature-strip">
+          <div className="feat-item">
+            <div className="feat-icon-wrapper blue-outline">
+              <Brain size={20} className="feat-icon" />
+            </div>
+            <div className="feat-text">
+              <strong>AI-Powered Risk Prediction</strong>
+              <span>Risk stratification using machine learning</span>
+            </div>
           </div>
-        </form>
-      </section>
+          <div className="feat-divider"></div>
+          <div className="feat-item">
+            <div className="feat-icon-wrapper teal-outline">
+              <Search size={20} className="feat-icon" />
+            </div>
+            <div className="feat-text">
+              <strong>Transparent Explanations</strong>
+              <span>SHAP-based explanation of contributing factors</span>
+            </div>
+          </div>
+          <div className="feat-divider"></div>
+          <div className="feat-item">
+            <div className="feat-icon-wrapper purple-outline">
+              <Map size={20} className="feat-icon" />
+            </div>
+            <div className="feat-text">
+              <strong>Personalized Recourse</strong>
+              <span>DiCE-based alternative pathways</span>
+            </div>
+          </div>
+          <div className="feat-divider"></div>
+          <div className="feat-item">
+            <div className="feat-icon-wrapper sky-outline">
+              <ActivitySquare size={20} className="feat-icon" />
+            </div>
+            <div className="feat-text">
+              <strong>Actionable Plans</strong>
+              <span>Turn insights into practical next steps</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
