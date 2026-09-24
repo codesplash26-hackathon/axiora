@@ -1,0 +1,292 @@
+/* Prediction Result Page */
+.result-container {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 50%, #f8fafc 100%);
+}
+
+.flex-center {
+  justify-content: center;
+  align-items: center;
+}
+
+/* Nav */
+.result-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 4rem;
+  z-index: 10;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  z-index: 10;
+}
+
+.loading-circles {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.circle-1, .circle-2 {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid var(--color-accent-blue);
+  animation: ripple 2s infinite ease-out;
+}
+
+.circle-1 {
+  width: 100%;
+  height: 100%;
+}
+
+.circle-2 {
+  width: 100%;
+  height: 100%;
+  animation-delay: 1s;
+}
+
+@keyframes ripple {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.pulse-icon {
+  color: var(--color-accent-teal);
+  animation: gentlePulse 1.5s infinite;
+}
+
+.loading-text {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  margin: 0;
+}
+
+.ecg-path {
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: drawEcg 2s linear infinite;
+}
+
+@keyframes drawEcg {
+  0% { stroke-dashoffset: 400; }
+  50% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -400; }
+}
+
+/* Main Result Layout */
+.result-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4rem;
+  z-index: 10;
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  max-width: 1200px;
+  gap: 4rem;
+  align-items: center;
+}
+
+.result-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.result-title {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  margin-bottom: 0.5rem;
+  line-height: 1.1;
+}
+
+.result-subtitle {
+  font-size: 1.1rem;
+  color: var(--color-secondary-text);
+  margin-bottom: 3rem;
+}
+
+/* Gauge */
+.gauge-container {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  margin-bottom: 2rem;
+}
+
+.risk-gauge {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.gauge-fill {
+  transition: stroke-dashoffset 2s ease-out;
+}
+
+.gauge-center {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.gauge-value {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  line-height: 1;
+}
+
+.gauge-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-secondary-text);
+  margin-top: 0.5rem;
+}
+
+/* Risk Band */
+.risk-band {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.moderate-risk {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.disclaimer {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-bottom: 2rem;
+}
+
+/* Right Side Visualization */
+.result-right {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 500px;
+}
+
+.visual-centerpiece-result {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.heart-wrapper-result {
+  position: relative;
+  width: 85%;
+  z-index: 5;
+  filter: drop-shadow(0 20px 30px rgba(0,0,0,0.1));
+}
+
+.heart-img-result {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.heartbeat-anim-result {
+  animation: gentlePulse 2s ease-in-out infinite;
+}
+
+.heart-aura-result {
+  position: absolute;
+  width: 90%;
+  height: 90%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, transparent 60%);
+  z-index: 1;
+  animation: auraBreath 4s infinite alternate ease-in-out;
+}
+
+.orbit-ring-result {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px dashed rgba(56, 189, 248, 0.3);
+  z-index: 2;
+}
+
+.orbit-ring-result.r1 {
+  width: 100%;
+  height: 100%;
+  animation: spinSlow 30s linear infinite;
+}
+
+.orbit-ring-result.r2 {
+  width: 80%;
+  height: 80%;
+  animation: spinSlow 20s linear infinite reverse;
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Glows */
+.blue-glow-result {
+  top: -10%; left: -10%;
+  width: 40vw; height: 40vw;
+  background: rgba(56, 189, 248, 0.15);
+}
+
+.purple-glow-result {
+  bottom: -10%; right: -10%;
+  width: 40vw; height: 40vw;
+  background: rgba(167, 139, 250, 0.1);
+}
+
+/* Animations */
+.fade-up {
+  animation: fadeUp 0.8s ease-out forwards;
+}
+
+.fade-up-delay {
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out forwards 0.3s;
+}
+
+@media (max-width: 992px) {
+  .result-grid { grid-template-columns: 1fr; gap: 2rem; text-align: center; }
+  .result-left { align-items: center; }
+  .result-right { height: 350px; }
+  .result-container { height: auto; min-height: 100vh; overflow: visible; padding-bottom: 2rem; }
+}

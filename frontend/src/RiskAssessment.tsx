@@ -4,6 +4,7 @@ import { ArrowLeft, User, Activity, HeartPulse, ChevronRight, ActivitySquare, Al
 
 interface RiskAssessmentProps {
   onBack: () => void;
+  onAnalyze: () => void;
 }
 
 const steps = [
@@ -12,7 +13,7 @@ const steps = [
   { id: 3, title: 'Your Insights' }
 ];
 
-export default function RiskAssessment({ onBack }: RiskAssessmentProps) {
+export default function RiskAssessment({ onBack, onAnalyze }: RiskAssessmentProps) {
   const [currentStep, setCurrentStep] = useState(1);
 
   const nextStep = () => {
@@ -171,7 +172,7 @@ export default function RiskAssessment({ onBack }: RiskAssessmentProps) {
               Next Step <ChevronRight size={20} />
             </button>
           ) : (
-            <button className="btn-gradient-cta">
+            <button className="btn-gradient-cta" onClick={onAnalyze}>
               Analyze My Risk <ActivitySquare size={20} className="ml-2" />
             </button>
           )}
