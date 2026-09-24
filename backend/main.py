@@ -6,6 +6,7 @@ import config
 
 from backend.pool import init_pool, shutdown_pool
 from backend.api_routes import router as api_router
+from backend.privacy_middleware import PrivacySanitizationMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,8 +35,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(PrivacySanitizationMiddleware)
 
 app.include_router(api_router)
+
 
 @app.get("/health", tags=["System"])
 async def health_check():
