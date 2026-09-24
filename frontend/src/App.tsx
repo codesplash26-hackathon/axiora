@@ -4,10 +4,11 @@ import heartImg from './assets/shiny_tech_heart.png';
 import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge } from 'lucide-react';
 import RiskAssessment from './RiskAssessment';
 import PredictionResult from './PredictionResult';
+import ExplanationPage from './ExplanationPage';
 
 const App = () => {
   const [mounted, setMounted] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'landing' | 'assessment' | 'prediction'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'assessment' | 'prediction' | 'explanation'>('landing');
 
   useEffect(() => {
     setMounted(true);
@@ -217,10 +218,15 @@ const App = () => {
           onBack={() => setCurrentPage('landing')} 
           onAnalyze={() => setCurrentPage('prediction')} 
         />
-      ) : (
+      ) : currentPage === 'prediction' ? (
         <PredictionResult 
           onBack={() => setCurrentPage('landing')} 
-          onNext={() => console.log("Next to Explanations")}
+          onNext={() => setCurrentPage('explanation')}
+        />
+      ) : (
+        <ExplanationPage
+          onBack={() => setCurrentPage('prediction')}
+          onNext={() => console.log("Next to Pathways")}
         />
       )}
     </>
