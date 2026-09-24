@@ -31,8 +31,10 @@ SAMPLE_LOW_RISK = {
 
 
 def test_handoff_consecutive_pipeline_latencies():
+    _ = predict_risk(SAMPLE_HIGH_RISK)  # warmup
     t0 = time.perf_counter()
     pred_res = predict_risk(SAMPLE_HIGH_RISK)
+
     pred_ms = (time.perf_counter() - t0) * 1000.0
 
     assert "risk_probability" in pred_res

@@ -5,7 +5,7 @@ import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
 from typing import Callable, Any, Optional
 
-from backend.worker import warmup_worker
+from backend.worker import warmup_worker, worker_ping
 
 process_pool: Optional[ProcessPoolExecutor] = None
 
@@ -17,11 +17,16 @@ def get_worker_count() -> int:
 
 
 def init_pool():
-    """Initialize process pool executor with warmup worker."""
+    """Initialize process pool executor with eager warmup workers."""
     global process_pool
     if process_pool is None:
         workers = get_worker_count()
         process_pool = ProcessPoolExecutor(max_workers=workers, initializer=warmup_worker)
+        try:
+            list(process_pool.map(worker_ping, range(workers)))
+        except Exception:
+            pass
+
 
 
 def get_executor() -> ProcessPoolExecutor:

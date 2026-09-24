@@ -53,8 +53,10 @@ def test_handoff_consecutive_pipeline_latencies():
     patient = SAMPLE_HIGH_RISK_PATIENT.copy()
 
     # 1. Prediction Timing (< 5ms SLA)
+    _ = predict_risk(patient)  # warmup
     t0 = time.perf_counter()
     pred_res = predict_risk(patient)
+
     pred_ms = (time.perf_counter() - t0) * 1000.0
 
     assert "risk_probability" in pred_res

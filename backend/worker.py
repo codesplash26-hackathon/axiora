@@ -44,23 +44,28 @@ FALLBACK_WEIGHTS = {
 
 def warmup_worker():
     """
-    Pre-warm worker process by pinning BLAS threads to 1 and loading ML assets
-    so first request does not suffer 1.2s cold start.
+    Pre-warm worker process by pinning BLAS threads to 1 and loading full ML engine
+    (SHAP TreeExplainer and DiCE fallback solver) so no request exceeds the 1.4s SLA.
     """
     import os
     os.environ["OMP_NUM_THREADS"] = "1"
     os.environ["MKL_NUM_THREADS"] = "1"
     os.environ["OPENBLAS_NUM_THREADS"] = "1"
     try:
-        import config
-        from ml_core import explain
-        if config.MODEL_PATH.exists() and config.SHAP_BACKGROUND_PATH.exists():
-            explain.load_explainer_assets()
+        from ml_engine import initialize_engine
+        initialize_engine()
     except Exception:
         pass
 
 
+
+def worker_ping(x: Any = None) -> bool:
+    """Lightweight ping to trigger eager child process spawning."""
+    return True
+
+
 def predict_worker(patient_dict: Dict[str, Any]) -> Dict[str, Any]:
+
     """Worker function isolated in a process pool for calibrated risk prediction."""
     try:
         from ml_engine import predict_risk
