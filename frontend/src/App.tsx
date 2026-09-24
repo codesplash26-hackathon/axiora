@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import heartImg from './assets/shiny_tech_heart.png';
-import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, ArrowDown, ActivitySquare, GitMerge, ChevronRight } from 'lucide-react';
+import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge } from 'lucide-react';
 
 const App = () => {
   const [mounted, setMounted] = useState(false);
@@ -12,6 +12,17 @@ const App = () => {
 
   return (
     <div className={`landing-container ${mounted ? 'mounted' : ''}`}>
+
+      {/* Navigation */}
+      <nav className="navbar fade-in-delay">
+        <div className="nav-logo">
+          <Heart className="logo-heart-nav" size={28} />
+        </div>
+        <div className="nav-actions">
+          <button className="btn-login">Log In</button>
+          <button className="btn-signup">Sign Up</button>
+        </div>
+      </nav>
 
       {/* Background Soft Glows */}
       <div className="bg-glow blue-glow"></div>
@@ -137,116 +148,54 @@ const App = () => {
         <div className="hero-right fade-in-delay">
           <div className="visual-centerpiece">
 
+            {/* Soft glow aura behind the heart */}
+            <div className="heart-aura"></div>
+
+            {/* Orbit rings */}
+            <div className="orbit-ring orbit-ring-1"></div>
+            <div className="orbit-ring orbit-ring-2"></div>
+
             {/* Heart 3D Visual */}
             <div className="heart-wrapper heartbeat-anim">
               <img src={heartImg} alt="CardioRecourse Heart" className="heart-img" />
             </div>
 
+            {/* Floating accent orbs */}
+            <div className="accent-orb orb-1"></div>
+            <div className="accent-orb orb-2"></div>
+            <div className="accent-orb orb-3"></div>
 
-            {/* Floating Card 1: Explainability */}
-            <div className="glass-card card-explain floating-anim-1">
-              <div className="card-header-clean">
-                <div className="icon-circle bg-blue-light"><Search size={18} color="#0284c7" /></div>
-                <div>
-                  <h4 className="card-title">Why this risk?</h4>
-                  <span className="card-subtitle">Key factors contributing<br />to your risk</span>
-                </div>
-              </div>
-              <div className="factor-list">
-                <div className="factor-item">
-                  <div className="f-label"><span className="dot bg-red"></span> High Blood Pressure</div>
-                  <span className="f-val">+32%</span>
-                </div>
-                <div className="factor-item">
-                  <div className="f-label"><span className="dot bg-orange"></span> Cholesterol</div>
-                  <span className="f-val">+24%</span>
-                </div>
-                <div className="factor-item">
-                  <div className="f-label"><span className="dot bg-purple"></span> Age</div>
-                  <span className="f-val">+18%</span>
-                </div>
-                <div className="factor-item">
-                  <div className="f-label"><span className="dot bg-yellow"></span> Smoking</div>
-                  <span className="f-val">+12%</span>
-                </div>
-                <div className="factor-item">
-                  <div className="f-label"><span className="dot bg-teal"></span> BMI</div>
-                  <span className="f-val">+8%</span>
-                </div>
-              </div>
-            </div>
+            {/* Falling Leaves */}
+            <div className="falling-leaf fall-1"></div>
+            <div className="falling-leaf fall-2"></div>
+            <div className="falling-leaf fall-3"></div>
+            <div className="falling-leaf fall-4"></div>
+            <div className="falling-leaf fall-5"></div>
 
-            {/* Floating Card 2: Risk Level */}
-            <div className="glass-card card-risk floating-anim-2">
-              <div className="card-header-clean center">
-                <div className="icon-circle bg-blue-light"><Heart size={16} color="#0284c7" /></div>
-                <h4 className="card-title">Your Risk Level</h4>
-              </div>
-              <div className="gauge-container">
-                <svg viewBox="0 0 100 55" className="gauge-svg">
-                  <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#f1f5f9" strokeWidth="12" strokeLinecap="round" />
-                  <path
-                    className="gauge-fill"
-                    d="M 10 45 A 35 35 0 0 1 90 45"
-                    fill="none"
-                    stroke="url(#risk-grad)"
-                    strokeWidth="12"
-                    strokeLinecap="round"
-                  />
-                  <defs>
-                    <linearGradient id="risk-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#f59e0b" />
-                      <stop offset="50%" stopColor="#f97316" />
-                      <stop offset="100%" stopColor="#ef4444" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="gauge-text">
-                  <span className="gauge-value">High</span>
-                </div>
-              </div>
-              <div className="gauge-subtext">10-year risk: 18.7%</div>
-            </div>
-
-            {/* Floating Card 3: Pathways */}
-            <div className="glass-card card-pathways floating-anim-3">
-              <div className="card-header-clean center">
-                <div className="icon-circle bg-green-light"><ActivitySquare size={16} color="#059669" /></div>
-                <h4 className="card-title">Your Personalized<br />Recourse Pathways</h4>
-              </div>
-              <div className="pathway-list">
-                <div className="pathway-item">
-                  <div className="path-icon bg-teal"><ArrowDown size={16} color="white" /></div>
-                  <div className="path-text">
-                    <strong>Lower BP</strong>
-                    <span>+6.2% risk reduction</span>
-                  </div>
-                  <ChevronRight size={16} className="path-arrow" />
-                </div>
-                <div className="pathway-item">
-                  <div className="path-icon bg-purple"><Utensils size={16} color="white" /></div>
-                  <div className="path-text">
-                    <strong>Improve Diet</strong>
-                    <span>+4.8% risk reduction</span>
-                  </div>
-                  <ChevronRight size={16} className="path-arrow" />
-                </div>
-                <div className="pathway-item">
-                  <div className="path-icon bg-blue"><Activity size={16} color="white" /></div>
-                  <div className="path-text">
-                    <strong>Increase Activity</strong>
-                    <span>+3.1% risk reduction</span>
-                  </div>
-                  <ChevronRight size={16} className="path-arrow" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="footer-quote fade-up-5">
-            Smarter insights.<br />Healthier choices.<br />A safer you.
+            {/* Subtle ECG trace */}
+            <svg className="ecg-trace" viewBox="0 0 300 60" preserveAspectRatio="none">
+              <path
+                d="M0,30 L60,30 L70,10 L80,50 L90,20 L100,40 L110,30 L300,30"
+                fill="none"
+                stroke="url(#ecg-gradient)"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <defs>
+                <linearGradient id="ecg-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#38bdf8" stopOpacity="0" />
+                  <stop offset="30%" stopColor="#38bdf8" stopOpacity="0.6" />
+                  <stop offset="60%" stopColor="#0891b2" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+            </svg>
           </div>
         </div>
+      </div>
+
+      <div className="footer-quote popup-anim">
+        Smarter insights.<br />Healthier choices.<br />A safer you.
       </div>
     </div>
   );
