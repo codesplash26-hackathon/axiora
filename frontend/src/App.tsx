@@ -115,7 +115,16 @@ const App = () => {
             </p>
           </div>
 
-          <div className="features-row fade-up-3">
+          <div className="cta-group fade-up-3">
+            <button className="btn-primary">
+              Check My Risk <span className="arrow">→</span>
+            </button>
+            <button className="btn-secondary">
+              See How It Works
+            </button>
+          </div>
+
+          <div className="features-row fade-up-4">
             <div className="feat-col">
               <div className="feat-icon-round bg-blue-100"><Brain size={26} color="#0284c7" /></div>
               <span>AI-Powered<br />Risk Prediction</span>
@@ -134,7 +143,7 @@ const App = () => {
             </div>
           </div>
 
-          <div className="credibility fade-up-4">
+          <div className="credibility fade-up-5">
             <div className="cred-line"></div>
             <div>
               A product of <strong>Axiora</strong><br />
