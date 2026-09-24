@@ -68,3 +68,18 @@ def test_explain_endpoint_invalid_data():
     with TestClient(app) as client:
         res = client.post("/explain", json=invalid_patient)
         assert res.status_code == 422
+
+
+def test_assess_composite_endpoint():
+    with TestClient(app) as client:
+        res = client.post("/assess", json=SAMPLE_PATIENT)
+        assert res.status_code == 200
+        data = res.json()
+        assert "prediction" in data
+        assert "explanation" in data
+        assert "recourse" in data
+        assert "total_latency_ms" in data
+        assert data["total_latency_ms"] < 1400.0
+        assert 0.0 <= data["prediction"]["risk_score"] <= 1.0
+        assert len(data["explanation"]["attributions"]) > 0
+        assert len(data["recourse"]["pathways"]) >= 2
