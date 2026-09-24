@@ -2,18 +2,22 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import heartImg from './assets/shiny_tech_heart.png';
 import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge } from 'lucide-react';
+import RiskAssessment from './RiskAssessment';
 
 const App = () => {
   const [mounted, setMounted] = useState(false);
+  const [currentPage, setCurrentPage] = useState<'landing' | 'assessment'>('landing');
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   return (
-    <div className={`landing-container ${mounted ? 'mounted' : ''}`}>
+    <>
+      {currentPage === 'landing' ? (
+        <div className={`landing-container ${mounted ? 'mounted' : ''}`}>
 
-      {/* Navigation */}
+          {/* Navigation */}
       <nav className="navbar fade-in-delay">
         <div className="nav-logo">
           <Heart className="logo-heart-nav" size={28} />
@@ -116,7 +120,7 @@ const App = () => {
           </div>
 
           <div className="cta-group fade-up-3">
-            <button className="btn-primary">
+            <button className="btn-primary" onClick={() => setCurrentPage('assessment')}>
               Check My Risk <span className="arrow">→</span>
             </button>
             <button className="btn-secondary">
@@ -206,7 +210,11 @@ const App = () => {
       <div className="footer-quote popup-anim">
         Smarter insights.<br />Healthier choices.<br />A safer you.
       </div>
-    </div>
+        </div>
+      ) : (
+        <RiskAssessment onBack={() => setCurrentPage('landing')} />
+      )}
+    </>
   );
 };
 
