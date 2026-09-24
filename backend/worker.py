@@ -41,7 +41,26 @@ FALLBACK_WEIGHTS = {
     "diabetes": 0.4
 }
 
+def warmup_worker():
+    """
+    Pre-warm worker process by pinning BLAS threads to 1 and loading ML assets
+    so first request does not suffer 1.2s cold start.
+    """
+    import os
+    os.environ["OMP_NUM_THREADS"] = "1"
+    os.environ["MKL_NUM_THREADS"] = "1"
+    os.environ["OPENBLAS_NUM_THREADS"] = "1"
+    try:
+        import config
+        from ml_core import explain
+        if config.MODEL_PATH.exists() and config.SHAP_BACKGROUND_PATH.exists():
+            explain.load_explainer_assets()
+    except Exception:
+        pass
+
+
 def explain_worker(patient_dict: Dict[str, Any]) -> Dict[str, Any]:
+
     """
     Worker function isolated in a process pool.
     Calculates the calibrated risk score and SHAP feature attributions.

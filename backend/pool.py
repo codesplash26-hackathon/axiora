@@ -3,11 +3,14 @@ import functools
 from concurrent.futures import ProcessPoolExecutor
 from typing import Callable, Any
 
+from backend.worker import warmup_worker
+
 process_pool: ProcessPoolExecutor = None  # type: ignore
 
 def init_pool():
     global process_pool
-    process_pool = ProcessPoolExecutor(max_workers=4)
+    process_pool = ProcessPoolExecutor(max_workers=4, initializer=warmup_worker)
+
 
 def shutdown_pool():
     global process_pool
