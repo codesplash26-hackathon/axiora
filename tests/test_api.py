@@ -23,9 +23,11 @@ SAMPLE_PATIENT = {
 
 def test_health_endpoint():
     with TestClient(app) as client:
-        res = client.get("/health")
+        res = client.get("/health", headers={"X-Request-ID": "custom-uuid-1234"})
         assert res.status_code == 200
         assert res.json()["status"] == "online"
+        assert res.headers.get("x-request-id") == "custom-uuid-1234"
+        assert "x-process-time-ms" in res.headers
 
 
 def test_predict_endpoint():

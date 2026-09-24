@@ -1,5 +1,7 @@
+import time
+import uuid
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 import config
 
@@ -39,6 +41,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(PrivacySanitizationMiddleware)
+
+
+@app.middleware("http")
+async def audit_correlation_and_timing_middleware(request: Request, call_next):
+    start_time = time.perf_counter()
+    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+
+    response = await call_next(request)
+
+    process_time_ms = (time.perf_counter() - start_time) * 1000.0
+    response.headers["X-Request-ID"] = request_id
+    response.headers["X-Process-Time-Ms"] = f"{process_time_ms:.2f}"
+    return response
+
 
 app.include_router(router)
 
