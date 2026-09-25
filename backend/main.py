@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import config
 
 from backend.api_routes import router
+from backend.auth.auth_routes import router as auth_router
+from backend.portal.doctor_routes import router as doctor_router
 from backend.pool import init_pool, shutdown_pool
 from backend.privacy_middleware import PrivacySanitizationMiddleware
 
@@ -58,6 +60,10 @@ async def audit_correlation_and_timing_middleware(request: Request, call_next):
 
 
 app.include_router(router)
+app.include_router(auth_router)
+app.include_router(doctor_router)
+app.include_router(auth_router, prefix="/api")
+app.include_router(doctor_router, prefix="/api")
 
 
 @app.get("/health", tags=["System"])
