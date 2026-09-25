@@ -1,22 +1,13 @@
-﻿import os
+import os
+import asyncio
+import functools
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
-from typing import Optional
+from typing import Callable, Any, Optional
 
-# Global pool instance
-_POOL: Optional[ProcessPoolExecutor] = None
+from backend.worker import warmup_worker, worker_ping
 
-
-def _init_worker():
-    """
-    Worker process initializer.
-    Restricts low-level linear algebra libraries to a single thread per worker
-    to avoid CPU core oversubscription and thrashing.
-    """
-    os.environ["OMP_NUM_THREADS"] = "1"
-    os.environ["MKL_NUM_THREADS"] = "1"
-    os.environ["OPENBLAS_NUM_THREADS"] = "1"
-    os.environ["NUMEXPR_NUM_THREADS"] = "1"
+process_pool: Optional[ProcessPoolExecutor] = None
 
 
 def get_worker_count() -> int:
@@ -25,21 +16,48 @@ def get_worker_count() -> int:
     return max(1, min(cpu_count - 1, 4)) if cpu_count > 1 else 1
 
 
+def init_pool():
+    """Initialize process pool executor with eager warmup workers."""
+    global process_pool
+    if process_pool is None:
+        workers = get_worker_count()
+        process_pool = ProcessPoolExecutor(max_workers=workers, initializer=warmup_worker)
+        try:
+            list(process_pool.map(worker_ping, range(workers)))
+        except Exception:
+            pass
+
+
+
 def get_executor() -> ProcessPoolExecutor:
     """Returns or lazily creates the singleton process pool."""
-    global _POOL
-    if _POOL is None:
-        workers = get_worker_count()
-        _POOL = ProcessPoolExecutor(
-            max_workers=workers,
-            initializer=_init_worker,
-        )
-    return _POOL
+    global process_pool
+    if process_pool is None:
+        init_pool()
+    return process_pool  # type: ignore
+
+
+def shutdown_pool():
+    """Gracefully shuts down worker processes on server termination."""
+    global process_pool
+    if process_pool is not None:
+        process_pool.shutdown(wait=True)
+        process_pool = None
 
 
 def shutdown_executor():
-    """Gracefully shuts down worker processes on server termination."""
-    global _POOL
-    if _POOL is not None:
-        _POOL.shutdown(wait=True)
-        _POOL = None
+    """Alias for shutdown_pool for backward compatibility."""
+    shutdown_pool()
+
+
+async def run_in_pool(func: Callable, *args, **kwargs) -> Any:
+    """Execute function in worker process pool asynchronously."""
+    global process_pool
+    if process_pool is None:
+        init_pool()
+
+    loop = asyncio.get_running_loop()
+    if kwargs:
+        func = functools.partial(func, **kwargs)
+
+    return await loop.run_in_executor(process_pool, func, *args)

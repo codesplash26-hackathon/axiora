@@ -1,0 +1,108 @@
+import json
+import logging
+from typing import Callable, Awaitable, Any, Dict, List
+from starlette.types import ASGIApp, Scope, Receive, Send
+
+from backend.privacy_rules import (
+    NETWORK_IDENTIFIER_HEADERS,
+    sanitize_patient_payload
+)
+
+logger = logging.getLogger("cardiorecourse.privacy")
+
+
+class PrivacySanitizationMiddleware:
+    """
+    Stateless Edge De-Identification ASGI Middleware.
+    
+    Enforces HIPAA Safe Harbor (45 CFR § 164.514) and Sri Lanka PDPA No. 9 of 2022
+    by stripping Protected Health Information (PHI) and client network signatures
+    before inbound payloads reach application endpoints or the ML inference engine.
+    """
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        # 1. Network-Level Identifier Stripping
+        # Purge X-Forwarded-For, User-Agent, Referer, Client IP proxies
+        original_headers = scope.get("headers", [])
+        cleaned_headers = [
+            (k, v) for k, v in original_headers
+            if k.lower() not in NETWORK_IDENTIFIER_HEADERS
+        ]
+        scope["headers"] = cleaned_headers
+
+        # 2. Client Socket Anonymization
+        # Mask original client IP address with anonymized localhost loopback
+        scope["client"] = ("0.0.0.0", 0)
+
+        # Initialize privacy audit telemetry on request state
+        if "state" not in scope:
+            scope["state"] = {}
+        scope["state"]["is_deidentified"] = True
+        scope["state"]["purged_phi_keys"] = []
+
+        # 3. Payload Body De-Identification
+        # Intercept incoming request stream, parse JSON, and strip direct text identifiers
+        body_chunks = []
+        more_body = True
+        while more_body:
+            message = await receive()
+            body_chunks.append(message.get("body", b""))
+            more_body = message.get("more_body", False)
+
+        raw_body = b"".join(body_chunks)
+        sanitized_body = raw_body
+        purged_keys: List[str] = []
+
+        if raw_body:
+            try:
+                decoded_text = raw_body.decode("utf-8")
+                payload = json.loads(decoded_text)
+                
+                if isinstance(payload, dict):
+                    sanitized_payload, purged_keys = sanitize_patient_payload(payload)
+                    scope["state"]["purged_phi_keys"] = purged_keys
+                    if purged_keys:
+                        logger.info(
+                            f"[PrivacySanitizer] Purged {len(purged_keys)} direct PHI identifiers: {purged_keys}"
+                        )
+                    # Zero-disk in-memory re-serialization
+                    sanitized_body = json.dumps(sanitized_payload).encode("utf-8")
+
+            except Exception:
+                # If payload is non-JSON or malformed, preserve original bytes for Pydantic validator to handle
+                sanitized_body = raw_body
+
+        # 4. Construct Sanitized In-Memory Stream Receive Callable
+        stream_sent = False
+
+        async def sanitized_receive() -> Dict[str, Any]:
+            nonlocal stream_sent
+            if not stream_sent:
+                stream_sent = True
+                return {
+                    "type": "http.request",
+                    "body": sanitized_body,
+                    "more_body": False
+                }
+            return {
+                "type": "http.request",
+                "body": b"",
+                "more_body": False
+            }
+
+        # 5. Append Privacy Compliance Response Headers
+        async def custom_send(message: Dict[str, Any]) -> None:
+            if message["type"] == "http.response.start":
+                resp_headers = list(message.get("headers", []))
+                resp_headers.append((b"x-privacy-policy", b"HIPAA-SafeHarbor,SriLanka-PDPA-2022"))
+                resp_headers.append((b"x-phi-purged-count", str(len(purged_keys)).encode("utf-8")))
+                message["headers"] = resp_headers
+            await send(message)
+
+        await self.app(scope, sanitized_receive, custom_send)

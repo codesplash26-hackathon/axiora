@@ -1,0 +1,339 @@
+/* Explanation Page Styles */
+.explanation-container {
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 50%, #f8fafc 100%);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Nav */
+.explanation-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 4rem;
+  z-index: 10;
+}
+
+/* Main Layout */
+.explanation-main {
+  position: relative;
+  z-index: 10;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 1rem 4rem 4rem 4rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.explanation-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.explanation-title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  margin-bottom: 0.5rem;
+}
+
+.explanation-subtitle {
+  font-size: 1.1rem;
+  color: var(--color-secondary-text);
+}
+
+.explanation-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 2.5rem;
+  align-items: flex-start;
+}
+
+/* Glass Card Base */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 1);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
+}
+
+.panel-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 1rem;
+}
+
+/* SHAP Chart */
+.shap-chart {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.chart-center-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: #cbd5e1;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.shap-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  z-index: 2;
+  opacity: 0;
+  animation: slideInRow 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideInRow {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.shap-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.factor-name {
+  color: var(--color-primary-dark);
+}
+
+.factor-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.factor-badge.mod {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.factor-badge.non-mod {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.shap-bar-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  height: 32px;
+  position: relative;
+}
+
+.shap-center-point {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+}
+
+.shap-bar-left {
+  display: flex;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.shap-bar-right {
+  display: flex;
+  justify-content: flex-start;
+  height: 100%;
+}
+
+.shap-fill {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 0.8rem;
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transform-origin: center;
+  animation: growBar 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.shap-bar-left .shap-fill {
+  transform-origin: right center;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.shap-bar-right .shap-fill {
+  transform-origin: left center;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  justify-content: flex-end;
+}
+
+@keyframes growBar {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.decrease-fill {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.increase-fill {
+  background: linear-gradient(90deg, #f43f5e, #fb7185);
+}
+
+/* Chart Legend */
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding-top: 1rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-secondary-text);
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.decrease-color { background: #10b981; }
+.increase-color { background: #f43f5e; }
+
+/* Right Panel */
+.info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.info-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin-bottom: 1rem;
+}
+
+.info-title svg {
+  color: var(--color-accent-blue);
+}
+
+.info-text {
+  font-size: 0.95rem;
+  color: var(--color-secondary-text);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.info-text:last-child {
+  margin-bottom: 0;
+}
+
+.info-text strong {
+  color: var(--color-primary-dark);
+}
+
+.opportunity-highlight {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: #fff1f2;
+  border: 1px solid #ffe4e6;
+  padding: 1.2rem;
+  border-radius: 1rem;
+}
+
+.text-red-500 {
+  color: #ef4444;
+  margin-top: 0.2rem;
+}
+
+.opportunity-highlight h4 {
+  margin: 0 0 0.2rem 0;
+  font-size: 1.05rem;
+  color: #9f1239;
+}
+
+.opportunity-highlight p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #be123c;
+  line-height: 1.4;
+}
+
+.btn-pathways {
+  margin-top: 1rem;
+  justify-content: center;
+  padding: 1.2rem;
+  font-size: 1.1rem;
+}
+
+
+/* Delay modifiers */
+.fade-up-delay-2 {
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out forwards 0.4s;
+}
+
+.fade-up-delay-3 {
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out forwards 0.6s;
+}
+
+.fade-up-delay-4 {
+  opacity: 0;
+  animation: fadeUp 0.8s ease-out forwards 0.8s;
+}
+
+@media (max-width: 992px) {
+  .explanation-grid {
+    grid-template-columns: 1fr;
+  }
+  .explanation-nav {
+    padding: 1.5rem 2rem;
+  }
+  .explanation-main {
+    padding: 1rem 2rem 4rem 2rem;
+  }
+}
