@@ -7,6 +7,7 @@ import PredictionResult from './PredictionResult';
 import ExplanationPage from './ExplanationPage';
 import RecoursePage from './RecoursePage';
 import DoctorLoginModal from './DoctorLoginModal';
+import DoctorDashboardPage from './DoctorDashboardPage';
 import { assessPatient } from './api';
 import type { PatientInput, AssessmentResponse } from './api';
 
@@ -47,7 +48,7 @@ const App = () => {
   return (
     <>
       {/* Global Falling Leaves Animation */}
-      {currentPage !== 'prediction' && (
+      {currentPage !== 'prediction' && currentPage !== 'doctor-dashboard' && (
         <div className="leaves-container global-leaves">
           {[...Array(7)].map((_, i) => {
             // On landing page, keep leaves on the right half
@@ -136,52 +137,54 @@ const App = () => {
       />
 
       {/* Global Side Navigation Panel */}
-      <div className="side-nav-panel">
-        <button 
-          className={`side-nav-item ${currentPage === 'landing' ? 'active' : ''}`}
-          data-tooltip="Home"
-          onClick={() => setCurrentPage('landing')}
-        >
-          <Home size={20} />
-        </button>
-        <button 
-          className={`side-nav-item ${currentPage === 'assessment' ? 'active' : ''}`}
-          data-tooltip="Risk Assessment"
-          onClick={() => setCurrentPage('assessment')}
-        >
-          <ClipboardList size={20} />
-        </button>
-        <button 
-          className={`side-nav-item ${currentPage === 'prediction' ? 'active' : ''}`}
-          data-tooltip="Prediction Results"
-          onClick={() => {
-            if (assessmentData) setCurrentPage('prediction');
-            else setCurrentPage('assessment');
-          }}
-        >
-          <PieChart size={20} />
-        </button>
-        <button 
-          className={`side-nav-item ${currentPage === 'explanation' ? 'active' : ''}`}
-          data-tooltip="AI Explanation (SHAP)"
-          onClick={() => {
-            if (assessmentData) setCurrentPage('explanation');
-            else setCurrentPage('assessment');
-          }}
-        >
-          <Info size={20} />
-        </button>
-        <button 
-          className={`side-nav-item ${currentPage === 'recourse' ? 'active' : ''}`}
-          data-tooltip="Action Plan (DiCE)"
-          onClick={() => {
-            if (assessmentData) setCurrentPage('recourse');
-            else setCurrentPage('assessment');
-          }}
-        >
-          <Map size={20} />
-        </button>
-      </div>
+      {!doctorUser && (
+        <div className="side-nav-panel">
+          <button 
+            className={`side-nav-item ${currentPage === 'landing' ? 'active' : ''}`}
+            data-tooltip="Home"
+            onClick={() => setCurrentPage('landing')}
+          >
+            <Home size={20} />
+          </button>
+          <button 
+            className={`side-nav-item ${currentPage === 'assessment' ? 'active' : ''}`}
+            data-tooltip="Risk Assessment"
+            onClick={() => setCurrentPage('assessment')}
+          >
+            <ClipboardList size={20} />
+          </button>
+          <button 
+            className={`side-nav-item ${currentPage === 'prediction' ? 'active' : ''}`}
+            data-tooltip="Prediction Results"
+            onClick={() => {
+              if (assessmentData) setCurrentPage('prediction');
+              else setCurrentPage('assessment');
+            }}
+          >
+            <PieChart size={20} />
+          </button>
+          <button 
+            className={`side-nav-item ${currentPage === 'explanation' ? 'active' : ''}`}
+            data-tooltip="AI Explanation (SHAP)"
+            onClick={() => {
+              if (assessmentData) setCurrentPage('explanation');
+              else setCurrentPage('assessment');
+            }}
+          >
+            <Info size={20} />
+          </button>
+          <button 
+            className={`side-nav-item ${currentPage === 'recourse' ? 'active' : ''}`}
+            data-tooltip="Action Plan (DiCE)"
+            onClick={() => {
+              if (assessmentData) setCurrentPage('recourse');
+              else setCurrentPage('assessment');
+            }}
+          >
+            <Map size={20} />
+          </button>
+        </div>
+      )}
 
       {currentPage === 'landing' ? (
         <div className={`landing-container ${mounted ? 'mounted' : ''}`}>
@@ -406,11 +409,11 @@ const App = () => {
           onHome={handleReset}
         />
       ) : currentPage === 'doctor-dashboard' && doctorUser ? (
-        <div className="flex-center" style={{ minHeight: '100vh', background: '#f8fafc', color: '#334155', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <Stethoscope size={48} color="#0284c7" />
-          <h2 style={{ fontSize: '2rem' }}>Doctor Dashboard</h2>
-          <p>This protected view is under construction for the next step of the plan.</p>
-        </div>
+        <DoctorDashboardPage 
+          doctor={doctorUser} 
+          onLogout={() => { setDoctorUser(null); setCurrentPage('landing'); }}
+          onNewAssessment={() => setCurrentPage('assessment')}
+        />
       ) : (
         <RiskAssessment 
           onBack={() => setCurrentPage('landing')} 
