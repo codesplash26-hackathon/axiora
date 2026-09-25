@@ -1,12 +1,15 @@
 /* Prediction Result Page */
 .result-container {
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
   position: relative;
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 50%, #f8fafc 100%);
+  box-sizing: border-box;
+  padding-bottom: 3rem;
 }
 
 .flex-center {
@@ -19,7 +22,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 4rem;
+  padding: 1.25rem 4rem;
   z-index: 10;
 }
 
@@ -94,7 +97,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 4rem;
+  padding: 0.5rem 4rem 2rem 4rem;
   z-index: 10;
 }
 
@@ -103,7 +106,7 @@
   grid-template-columns: 1fr 1fr;
   width: 100%;
   max-width: 1200px;
-  gap: 4rem;
+  gap: 3rem;
   align-items: center;
 }
 
@@ -114,25 +117,25 @@
 }
 
 .result-title {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 800;
   color: var(--color-primary-dark);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   line-height: 1.1;
 }
 
 .result-subtitle {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: var(--color-secondary-text);
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
 }
 
 /* Gauge */
 .gauge-container {
   position: relative;
-  width: 250px;
-  height: 250px;
-  margin-bottom: 2rem;
+  width: 210px;
+  height: 210px;
+  margin-bottom: 1.25rem;
 }
 
 .risk-gauge {
@@ -155,29 +158,29 @@
 }
 
 .gauge-value {
-  font-size: 3.5rem;
+  font-size: 3rem;
   font-weight: 800;
   color: var(--color-primary-dark);
   line-height: 1;
 }
 
 .gauge-label {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--color-secondary-text);
-  margin-top: 0.5rem;
+  margin-top: 0.35rem;
 }
 
 /* Risk Band */
 .risk-band {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  padding: 0.8rem 1.5rem;
+  gap: 0.75rem;
+  padding: 0.6rem 1.25rem;
   border-radius: 9999px;
   font-weight: 700;
-  font-size: 1.2rem;
-  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
 }
 
 .low-risk {
@@ -201,7 +204,8 @@
 .disclaimer {
   font-size: 0.85rem;
   color: #94a3b8;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+  max-width: 500px;
 }
 
 /* Right Side Visualization */
@@ -296,9 +300,55 @@
   animation: fadeUp 0.8s ease-out forwards 0.3s;
 }
 
+/* Buttons & CTAs */
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 0.6rem 1.2rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  color: var(--color-secondary-text, #475569);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.btn-back:hover {
+  background: #f8fafc;
+  color: var(--color-primary-dark, #0f172a);
+  transform: translateX(-2px);
+}
+
+.btn-gradient-cta {
+  background: linear-gradient(135deg, var(--color-accent-blue, #0284c7), var(--color-accent-teal, #0891b2));
+  color: white;
+  border: none;
+  padding: 0.85rem 1.8rem;
+  border-radius: 9999px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(2, 132, 199, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  z-index: 20;
+}
+
+.btn-gradient-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 24px rgba(2, 132, 199, 0.35);
+}
+
 @media (max-width: 992px) {
   .result-grid { grid-template-columns: 1fr; gap: 2rem; text-align: center; }
   .result-left { align-items: center; }
-  .result-right { height: 350px; }
-  .result-container { height: auto; min-height: 100vh; overflow: visible; padding-bottom: 2rem; }
+  .result-right { height: 320px; }
+  .result-container { height: auto; min-height: 100vh; overflow-y: auto; padding-bottom: 3rem; }
+  .result-nav { padding: 1rem 1.5rem; }
+  .result-main { padding: 0 1.5rem; }
 }
