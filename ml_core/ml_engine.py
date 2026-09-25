@@ -137,45 +137,72 @@ def _generate_clinical_fallback_candidates(baseline_row: Dict[str, Any]) -> List
     """
     Generates multi-target clinical pathways that systematically achieve 
     sub-20% cardiovascular risk following ACC/AHA guidelines.
+    Ensures biomarkers can never worsen/increase above the patient's baseline.
     """
+    SAFE_FLOORS = {
+        "sysBP": 110.0,
+        "diaBP": 70.0,
+        "totChol": 140.0,
+        "glucose": 75.0,
+        "BMI": 19.5,
+        "heartRate": 55.0,
+        "cigsPerDay": 0.0,
+    }
+
+    def safe_reduce(feat: str, delta: float, floor: Optional[float] = None) -> float:
+        curr = float(baseline_row.get(feat, 0.0))
+        fl = floor if floor is not None else SAFE_FLOORS.get(feat, 0.0)
+        target = max(fl, curr - delta)
+        return round(min(curr, target), 1)
+
     candidates = []
 
     # Pathway 1: Complete Smoking Cessation + Hemodynamic Normalization
     p1 = baseline_row.copy()
-    p1["cigsPerDay"] = 0.0
+    p1["cigsPerDay"] = safe_reduce("cigsPerDay", float(baseline_row["cigsPerDay"]), floor=0.0)
     p1["currentSmoker"] = 0
-    p1["sysBP"] = max(115.0, round(float(baseline_row["sysBP"]) - 25.0, 1))
-    p1["diaBP"] = max(75.0, round(float(baseline_row["diaBP"]) - 12.0, 1))
-    p1["BMI"] = max(22.0, round(float(baseline_row["BMI"]) - 2.5, 1))
-    p1["heartRate"] = max(60.0, round(float(baseline_row["heartRate"]) - 4.0, 1))
+    p1["sysBP"] = safe_reduce("sysBP", 25.0, floor=115.0)
+    p1["diaBP"] = safe_reduce("diaBP", 12.0, floor=75.0)
+    p1["BMI"] = safe_reduce("BMI", 2.5, floor=22.0)
+    p1["heartRate"] = safe_reduce("heartRate", 4.0, floor=60.0)
     if float(baseline_row["sysBP"]) >= 140.0:
         p1["BPMeds"] = 1
     candidates.append(p1)
 
     # Pathway 2: Complete Smoking Cessation + Aggressive Lipid & Glucose Control
     p2 = baseline_row.copy()
-    p2["cigsPerDay"] = 0.0
+    p2["cigsPerDay"] = safe_reduce("cigsPerDay", float(baseline_row["cigsPerDay"]), floor=0.0)
     p2["currentSmoker"] = 0
-    p2["totChol"] = max(165.0, round(float(baseline_row["totChol"]) - 75.0, 1))
-    p2["glucose"] = max(85.0, round(float(baseline_row["glucose"]) - 55.0, 1))
-    p2["BMI"] = max(22.0, round(float(baseline_row["BMI"]) - 4.5, 1))
-    p2["sysBP"] = max(120.0, round(float(baseline_row["sysBP"]) - 15.0, 1))
-    p2["diaBP"] = max(78.0, round(float(baseline_row["diaBP"]) - 8.0, 1))
+    p2["totChol"] = safe_reduce("totChol", 75.0, floor=165.0)
+    p2["glucose"] = safe_reduce("glucose", 55.0, floor=85.0)
+    p2["BMI"] = safe_reduce("BMI", 4.5, floor=22.0)
+    p2["sysBP"] = safe_reduce("sysBP", 15.0, floor=120.0)
+    p2["diaBP"] = safe_reduce("diaBP", 8.0, floor=78.0)
     candidates.append(p2)
 
     # Pathway 3: Comprehensive Multi-Factor Protocol (All Clinical Targets)
     p3 = baseline_row.copy()
-    p3["cigsPerDay"] = 0.0
+    p3["cigsPerDay"] = safe_reduce("cigsPerDay", float(baseline_row["cigsPerDay"]), floor=0.0)
     p3["currentSmoker"] = 0
-    p3["sysBP"] = max(115.0, min(float(baseline_row["sysBP"]) - 25.0, 120.0))
-    p3["diaBP"] = max(75.0, min(float(baseline_row["diaBP"]) - 12.0, 78.0))
-    p3["totChol"] = max(170.0, min(float(baseline_row["totChol"]) - 60.0, 185.0))
-    p3["glucose"] = max(85.0, min(float(baseline_row["glucose"]) - 45.0, 95.0))
-    p3["BMI"] = max(22.0, min(float(baseline_row["BMI"]) - 5.0, 24.5))
-    p3["heartRate"] = max(60.0, min(float(baseline_row["heartRate"]) - 6.0, 68.0))
+    p3["sysBP"] = safe_reduce("sysBP", max(25.0, float(baseline_row["sysBP"]) - 120.0), floor=115.0)
+    p3["diaBP"] = safe_reduce("diaBP", max(12.0, float(baseline_row["diaBP"]) - 78.0), floor=75.0)
+    p3["totChol"] = safe_reduce("totChol", max(60.0, float(baseline_row["totChol"]) - 185.0), floor=170.0)
+    p3["glucose"] = safe_reduce("glucose", max(45.0, float(baseline_row["glucose"]) - 95.0), floor=85.0)
+    p3["BMI"] = safe_reduce("BMI", max(5.0, float(baseline_row["BMI"]) - 24.5), floor=22.0)
+    p3["heartRate"] = safe_reduce("heartRate", max(6.0, float(baseline_row["heartRate"]) - 68.0), floor=60.0)
     if float(baseline_row["sysBP"]) >= 140.0:
         p3["BPMeds"] = 1
     candidates.append(p3)
+
+    # Directional Clamping: Ensure biomarkers never exceed patient's baseline
+    unidirectional_feats = ["sysBP", "diaBP", "totChol", "glucose", "BMI", "heartRate", "cigsPerDay"]
+    for cand in candidates:
+        for feat in unidirectional_feats:
+            if feat in cand:
+                cand[feat] = min(float(cand[feat]), float(baseline_row[feat]))
+        if cand.get("cigsPerDay", 0.0) <= 0.0:
+            cand["currentSmoker"] = 0
+            cand["cigsPerDay"] = 0.0
 
     return candidates
 
@@ -192,6 +219,7 @@ def generate_recourse(
     baseline_cat = _get_risk_category(baseline_prob)
     baseline_row = query_df.iloc[0].to_dict()
 
+    permitted_range = get_permitted_range(patient_dict)
     set_active_patient_context(patient_dict)
     set_model_recourse_threshold(baseline_prob)
 
@@ -201,7 +229,9 @@ def generate_recourse(
             total_CFs=total_pathways,
             desired_class=0,
             max_timer_ms=950.0,
-            genetic_maxiterations=genetic_maxiterations
+            genetic_maxiterations=genetic_maxiterations,
+            patient_dict=patient_dict,
+            permitted_range=permitted_range
         )
     finally:
         set_active_patient_context(None)
