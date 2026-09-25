@@ -114,6 +114,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  padding-left: 4rem;
 }
 
 .result-title {
@@ -377,7 +378,7 @@
 
 @media (max-width: 992px) {
   .result-grid { grid-template-columns: 1fr; gap: 3rem; text-align: center; }
-  .result-left { align-items: center; }
+  .result-left { align-items: center; padding-left: 0; }
   .result-right { height: auto; min-height: 350px; margin-top: 1rem; }
   .heart-wrapper-result { max-width: 250px; }
   .orbit-icon-distance { transform: translateY(-190px); }
