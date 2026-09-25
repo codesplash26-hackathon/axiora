@@ -5,10 +5,10 @@ import type { RecourseResponse } from './api';
 interface RecoursePageProps {
   recourse: RecourseResponse;
   onBack: () => void;
-  onHome: () => void;
+  onNext: () => void;
 }
 
-export default function RecoursePage({ recourse, onBack, onHome }: RecoursePageProps) {
+export default function RecoursePage({ recourse, onBack, onNext }: RecoursePageProps) {
   const pathways = recourse.pathways || [];
   const baselineRiskPct = (recourse.patient_baseline_risk * 100).toFixed(1);
 
@@ -111,8 +111,8 @@ export default function RecoursePage({ recourse, onBack, onHome }: RecoursePageP
           <button className="btn-secondary" onClick={handlePrint}>
             <Printer size={18} className="mr-2" /> Export Action Plan (PDF)
           </button>
-          <button className="btn-gradient-cta" onClick={onHome}>
-            <Sparkles size={18} className="mr-2" /> New Patient Assessment
+          <button className="btn-gradient-cta" onClick={onNext}>
+            See Healthier Tomorrows <ArrowRight size={18} className="ml-2" />
           </button>
         </div>
       </main>

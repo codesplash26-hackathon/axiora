@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import heartImg from './assets/shiny_tech_heart.png';
-import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge, HeartPulse, AlertTriangle, Home, ClipboardList, PieChart, Info, Map, User, Stethoscope } from 'lucide-react';
+import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge, HeartPulse, AlertTriangle, Home, ClipboardList, PieChart, Info, Map, User, Stethoscope, Sunrise } from 'lucide-react';
 import RiskAssessment from './RiskAssessment';
 import PredictionResult from './PredictionResult';
 import ExplanationPage from './ExplanationPage';
 import RecoursePage from './RecoursePage';
 import DoctorLoginModal from './DoctorLoginModal';
 import DoctorDashboardPage from './DoctorDashboardPage';
+import HealthierTomorrows from './HealthierTomorrows';
 import { assessPatient } from './api';
 import type { PatientInput, AssessmentResponse } from './api';
 
 const App = () => {
   const [mounted, setMounted] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'landing' | 'assessment' | 'prediction' | 'explanation' | 'recourse' | 'doctor-dashboard'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'assessment' | 'prediction' | 'explanation' | 'recourse' | 'tomorrows' | 'doctor-dashboard'>('landing');
   const [assessmentData, setAssessmentData] = useState<AssessmentResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -182,6 +183,16 @@ const App = () => {
             }}
           >
             <Map size={20} />
+          </button>
+          <button 
+            className={`side-nav-item ${currentPage === 'tomorrows' ? 'active' : ''}`}
+            data-tooltip="Healthier Tomorrows"
+            onClick={() => {
+              if (assessmentData) setCurrentPage('tomorrows');
+              else setCurrentPage('assessment');
+            }}
+          >
+            <Sunrise size={20} />
           </button>
         </div>
       )}
@@ -406,6 +417,11 @@ const App = () => {
         <RecoursePage 
           recourse={assessmentData.recourse}
           onBack={() => setCurrentPage('explanation')}
+          onNext={() => setCurrentPage('tomorrows')}
+        />
+      ) : currentPage === 'tomorrows' ? (
+        <HealthierTomorrows
+          onBack={() => setCurrentPage('recourse')}
           onHome={handleReset}
         />
       ) : currentPage === 'doctor-dashboard' && doctorUser ? (
