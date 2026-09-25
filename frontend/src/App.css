@@ -31,7 +31,8 @@ body {
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 50%, #f8fafc 100%);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* Navigation */
