@@ -6,19 +6,18 @@ import RiskAssessment from './RiskAssessment';
 import PredictionResult from './PredictionResult';
 import ExplanationPage from './ExplanationPage';
 import RecoursePage from './RecoursePage';
-import AuthModal from './AuthModal';
+import DoctorLoginModal from './DoctorLoginModal';
 import { assessPatient } from './api';
 import type { PatientInput, AssessmentResponse } from './api';
 
 const App = () => {
   const [mounted, setMounted] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'landing' | 'assessment' | 'prediction' | 'explanation' | 'recourse'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'assessment' | 'prediction' | 'explanation' | 'recourse' | 'doctor-dashboard'>('landing');
   const [assessmentData, setAssessmentData] = useState<AssessmentResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [authUser, setAuthUser] = useState<{ type: 'patient' | 'doctor'; name: string } | null>(null);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [doctorUser, setDoctorUser] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [isDoctorLoginOpen, setIsDoctorLoginOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -127,11 +126,13 @@ const App = () => {
         </div>
       )}
 
-      <AuthModal 
-        isOpen={isAuthOpen} 
-        onClose={() => setIsAuthOpen(false)} 
-        initialMode={authMode} 
-        onAuthenticate={(user) => setAuthUser(user)} 
+      <DoctorLoginModal 
+        isOpen={isDoctorLoginOpen} 
+        onClose={() => setIsDoctorLoginOpen(false)} 
+        onLogin={(doc) => {
+          setDoctorUser(doc);
+          setCurrentPage('doctor-dashboard');
+        }}
       />
 
       {/* Global Side Navigation Panel */}
@@ -191,20 +192,19 @@ const App = () => {
               <Heart className="logo-heart-nav" size={28} />
             </div>
             <div className="nav-actions">
-              {authUser ? (
+              {doctorUser ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a', fontWeight: 600 }}>
-                    {authUser.type === 'doctor' ? <Stethoscope size={18} color="#0284c7" /> : <User size={18} color="#059669" />}
-                    <span>{authUser.name}</span>
+                    <Stethoscope size={18} color="#0284c7" />
+                    <span>{doctorUser.name}</span>
                   </div>
-                  <button className="btn-login" onClick={() => setAuthUser(null)}>Sign Out</button>
-                  <button className="btn-signup" onClick={() => setCurrentPage('assessment')}>New Assessment</button>
+                  <button className="btn-login" onClick={() => { setDoctorUser(null); setCurrentPage('landing'); }}>Sign Out</button>
+                  <button className="btn-signup" onClick={() => setCurrentPage('doctor-dashboard')}>Dashboard</button>
                 </div>
               ) : (
-                <>
-                  <button className="btn-login" onClick={() => { setAuthMode('login'); setIsAuthOpen(true); }}>Log In</button>
-                  <button className="btn-signup" onClick={() => { setAuthMode('signup'); setIsAuthOpen(true); }}>Sign Up</button>
-                </>
+                <button className="btn-signup" onClick={() => setIsDoctorLoginOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Stethoscope size={18} /> Doctor Portal
+                </button>
               )}
             </div>
           </nav>
@@ -405,6 +405,12 @@ const App = () => {
           onBack={() => setCurrentPage('explanation')}
           onHome={handleReset}
         />
+      ) : currentPage === 'doctor-dashboard' && doctorUser ? (
+        <div className="flex-center" style={{ minHeight: '100vh', background: '#f8fafc', color: '#334155', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <Stethoscope size={48} color="#0284c7" />
+          <h2 style={{ fontSize: '2rem' }}>Doctor Dashboard</h2>
+          <p>This protected view is under construction for the next step of the plan.</p>
+        </div>
       ) : (
         <RiskAssessment 
           onBack={() => setCurrentPage('landing')} 
