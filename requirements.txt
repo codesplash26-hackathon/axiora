@@ -11,3 +11,7 @@ pydantic
 orjson
 httpx
 pytest
+firebase-admin
+pyjwt
+bcrypt
+passlib

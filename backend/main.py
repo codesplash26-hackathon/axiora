@@ -40,7 +40,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# app.add_middleware(PrivacySanitizationMiddleware)
+# Active HIPAA Safe Harbor & Sri Lanka PDPA edge de-identification
+app.add_middleware(PrivacySanitizationMiddleware)
 
 
 @app.middleware("http")
