@@ -5,6 +5,7 @@ import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from starlette.concurrency import run_in_threadpool
 from backend.db.firestore_service import get_doctor_by_id
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "axiora-cardiorecourse-jwt-clinical-secret-2026")
@@ -61,7 +62,7 @@ def decode_access_token(token: str) -> Dict[str, Any]:
         )
 
 
-def get_current_doctor(
+async def get_current_doctor(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> Dict[str, Any]:
     """
@@ -84,7 +85,7 @@ def get_current_doctor(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    doctor = get_doctor_by_id(doctor_id)
+    doctor = await run_in_threadpool(get_doctor_by_id, doctor_id)
     if not doctor:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

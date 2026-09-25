@@ -392,3 +392,62 @@ def test_recourse_execution_sla_under_950ms(high_risk_patient):
         f"Recourse SLA violated! Completed in {duration_ms:.2f}ms (Budget: < 950.0ms)"
     )
     assert res["pathways_count"] >= 2
+
+
+def test_heuristic_fallback_biomarker_non_worsening_low_baseline():
+    """
+    Clinical Safety Test:
+    Patients with already-low baseline biomarkers (e.g. totChol 145, sysBP 112)
+    must NEVER have those biomarkers increased/worsened in clinical fallback pathways.
+    """
+    from ml_core.ml_engine import _generate_clinical_fallback_candidates
+
+    low_baseline = {
+        "male": 0,
+        "age": 45.0,
+        "currentSmoker": 0,
+        "cigsPerDay": 0.0,
+        "BPMeds": 0,
+        "prevalentStroke": 0,
+        "prevalentHyp": 0,
+        "diabetes": 0,
+        "totChol": 145.0,
+        "sysBP": 112.0,
+        "diaBP": 72.0,
+        "BMI": 20.5,
+        "heartRate": 58.0,
+        "glucose": 78.0
+    }
+
+    candidates = _generate_clinical_fallback_candidates(low_baseline)
+    assert len(candidates) >= 2
+
+    biomarkers = ["sysBP", "diaBP", "totChol", "BMI", "glucose", "heartRate", "cigsPerDay"]
+    for i, cand in enumerate(candidates):
+        for feat in biomarkers:
+            assert cand[feat] <= low_baseline[feat], (
+                f"Candidate {i} worsened {feat}: baseline={low_baseline[feat]}, candidate={cand[feat]}"
+            )
+
+
+def test_permitted_range_thread_safety_direct_patient_dict():
+    """
+    Concurrency Safety Test:
+    get_permitted_range accepts patient_dict directly and clamps boundaries
+    without mutating or requiring global active patient context.
+    """
+    from ml_core.dice_setup import get_permitted_range, set_active_patient_context
+
+    # Ensure no global context is active
+    set_active_patient_context(None)
+
+    patient_a = {"sysBP": 130.0, "totChol": 190.0, "cigsPerDay": 10.0, "heartRate": 65.0}
+    patient_b = {"sysBP": 160.0, "totChol": 260.0, "cigsPerDay": 25.0, "heartRate": 85.0}
+
+    pr_a = get_permitted_range(patient_a)
+    pr_b = get_permitted_range(patient_b)
+
+    assert pr_a["sysBP"][1] == 130.0
+    assert pr_b["sysBP"][1] == 160.0
+    assert pr_a["totChol"][1] == 190.0
+    assert pr_b["totChol"][1] == 260.0

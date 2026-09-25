@@ -3,6 +3,7 @@ import time
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 import config
 from backend.auth.auth_handler import get_current_doctor
@@ -78,7 +79,7 @@ class DoctorAssessmentResponse(AssessmentResponse):
 @router.get("/overview")
 async def get_overview(current_doctor: Dict[str, Any] = Depends(get_current_doctor)):
     """Returns clinical cohort statistics (Total, High, Borderline, Low risk counts)."""
-    return get_doctor_overview(current_doctor["doctorId"])
+    return await run_in_threadpool(get_doctor_overview, current_doctor["doctorId"])
 
 
 @router.get("/patients")
@@ -88,7 +89,9 @@ async def get_patients(
     current_doctor: Dict[str, Any] = Depends(get_current_doctor),
 ):
     """Lists all registered patients managed by the authenticated doctor."""
-    return list_patients(current_doctor["doctorId"], search=search, risk_band=risk_band)
+    return await run_in_threadpool(
+        list_patients, current_doctor["doctorId"], search=search, risk_band=risk_band
+    )
 
 
 @router.post("/patients", status_code=status.HTTP_201_CREATED)
@@ -97,7 +100,7 @@ async def register_patient(
     current_doctor: Dict[str, Any] = Depends(get_current_doctor),
 ):
     """Registers a new patient record under the authenticated doctor."""
-    record = create_patient(current_doctor["doctorId"], payload.model_dump())
+    record = await run_in_threadpool(create_patient, current_doctor["doctorId"], payload.model_dump())
     return record
 
 
@@ -107,7 +110,7 @@ async def get_patient_profile(
     current_doctor: Dict[str, Any] = Depends(get_current_doctor),
 ):
     """Retrieves full profile for a specific patient."""
-    patient = get_patient(current_doctor["doctorId"], patient_id)
+    patient = await run_in_threadpool(get_patient, current_doctor["doctorId"], patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found or not assigned to your account.")
     return patient
@@ -121,7 +124,7 @@ async def update_patient_profile(
 ):
     """Updates baseline patient information."""
     updates = {k: v for k, v in payload.model_dump().items() if v is not None}
-    updated = update_patient(current_doctor["doctorId"], patient_id, updates)
+    updated = await run_in_threadpool(update_patient, current_doctor["doctorId"], patient_id, updates)
     if not updated:
         raise HTTPException(status_code=404, detail="Patient not found or not assigned to your account.")
     return updated
@@ -133,10 +136,10 @@ async def get_history(
     current_doctor: Dict[str, Any] = Depends(get_current_doctor),
 ):
     """Returns chronological timeline of previous risk assessments and saved action plans."""
-    patient = get_patient(current_doctor["doctorId"], patient_id)
+    patient = await run_in_threadpool(get_patient, current_doctor["doctorId"], patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found or not assigned to your account.")
-    return get_patient_history(patient_id)
+    return await run_in_threadpool(get_patient_history, patient_id)
 
 
 # ---------------------------------------------------------------------------
@@ -153,7 +156,7 @@ async def assess_doctor_patient(
     Runs XGBoost risk prediction, SHAP waterfall explanation, and DiCE recourse pathways
     for a registered patient. Automatically persists the clinical assessment in Firestore.
     """
-    patient = get_patient(current_doctor["doctorId"], patient_id)
+    patient = await run_in_threadpool(get_patient, current_doctor["doctorId"], patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found or not assigned to your account.")
 
@@ -190,15 +193,19 @@ async def assess_doctor_patient(
         exp_obj = ExplanationResponse(**exp_res)
         rec_obj = RecourseResponse(**rec_res)
 
-        # Persist clinical assessment to Firestore
-        saved_rec = save_assessment(patient_id, {
-            "riskScore": pred_obj.risk_score,
-            "riskPercentage": pred_obj.risk_percentage,
-            "riskBand": pred_obj.risk_band,
-            "inputBiomarkers": patient_dict,
-            "shapAttributions": [a.model_dump() for a in exp_obj.attributions],
-            "pipelineLatencyMs": latency_ms,
-        })
+        # Persist clinical assessment to Firestore non-blockingly
+        saved_rec = await run_in_threadpool(
+            save_assessment,
+            patient_id,
+            {
+                "riskScore": pred_obj.risk_score,
+                "riskPercentage": pred_obj.risk_percentage,
+                "riskBand": pred_obj.risk_band,
+                "inputBiomarkers": patient_dict,
+                "shapAttributions": [a.model_dump() for a in exp_obj.attributions],
+                "pipelineLatencyMs": latency_ms,
+            }
+        )
 
         return DoctorAssessmentResponse(
             assessment_id=saved_rec["assessmentId"],
@@ -223,11 +230,11 @@ async def save_patient_plan(
     """
     Saves a doctor-confirmed clinical action plan with custom notes into the patient's Firestore record.
     """
-    patient = get_patient(current_doctor["doctorId"], patient_id)
+    patient = await run_in_threadpool(get_patient, current_doctor["doctorId"], patient_id)
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found or not assigned to your account.")
 
-    plan_record = save_action_plan(patient_id, payload.model_dump())
+    plan_record = await run_in_threadpool(save_action_plan, patient_id, payload.model_dump())
     return {
         "status": "success",
         "message": "Clinical action plan successfully saved to patient record.",

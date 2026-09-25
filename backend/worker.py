@@ -178,8 +178,20 @@ def recourse_worker(patient_dict: Dict[str, Any]) -> Dict[str, Any]:
             "is_fallback": res["fallback_triggered"]
         }
     except Exception as e:
+        baseline_risk = 0.0
+        try:
+            from ml_engine import predict_risk
+            pred_res = predict_risk(patient_dict)
+            baseline_risk = float(pred_res.get("risk_probability", 0.0))
+        except Exception:
+            try:
+                exp_res = explain_worker(patient_dict)
+                baseline_risk = float(exp_res.get("risk_score", 0.0))
+            except Exception:
+                baseline_risk = 0.0
+
         return {
-            "patient_baseline_risk": 0.428,
+            "patient_baseline_risk": baseline_risk,
             "pathways": [],
             "is_fallback": True
         }

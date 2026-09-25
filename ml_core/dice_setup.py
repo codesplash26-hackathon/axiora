@@ -104,7 +104,8 @@ def get_permitted_range(patient_dict: Optional[Dict[str, Any]] = None) -> Dict[s
     """
     Returns feature ranges. If a patient is provided (or set in context),
     it dynamically clamps the upper bound of risk features to the patient's current value.
-    Prevents DiCE from ever suggesting worsening biomarkers.
+    Prevents DiCE from ever suggesting worsening biomarkers. Passing patient_dict directly
+    guarantees thread safety under concurrent multi-tenant requests.
     """
     target_patient = patient_dict if patient_dict is not None else _active_patient_context
     schema = load_schema()
@@ -113,7 +114,7 @@ def get_permitted_range(patient_dict: Optional[Dict[str, Any]] = None) -> Dict[s
     feature_types = schema.get("feature_types", {})
 
     p_range = {}
-    unidirectional_harmful = ["sysBP", "diaBP", "totChol", "BMI", "glucose", "cigsPerDay"]
+    unidirectional_harmful = ["sysBP", "diaBP", "totChol", "BMI", "glucose", "cigsPerDay", "heartRate"]
 
     for feat in actionable:
         b = boundaries[feat]

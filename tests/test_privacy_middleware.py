@@ -118,3 +118,34 @@ def test_zero_disk_serialization_enforcement():
         with assert_zero_disk_writes():
             response = client.post("/explain", json=VALID_PATIENT_PAYLOAD)
             assert response.status_code == 200
+
+
+def test_privacy_middleware_rejects_payload_exceeding_2mb():
+    """
+    Security Test:
+    Requests with body size exceeding 2MB must be rejected with HTTP 413 Payload Too Large.
+    """
+    large_padding = "x" * (2 * 1024 * 1024 + 1024)  # > 2MB
+    payload = VALID_PATIENT_PAYLOAD.copy()
+    payload["padding"] = large_padding
+
+    with TestClient(app) as client:
+        response = client.post("/predict", json=payload)
+        assert response.status_code == 413
+        assert "Payload Too Large" in response.text
+
+
+def test_privacy_middleware_fail_closed_on_malformed_json():
+    """
+    Security Test:
+    Non-JSON / corrupted payload bodies must be rejected with HTTP 400 Bad Request
+    under fail-closed policy, preventing un-sanitized raw data from leaking downstream.
+    """
+    with TestClient(app) as client:
+        response = client.post(
+            "/predict",
+            content=b"INVALID_NON_JSON_CORRUPTED_STREAM",
+            headers={"Content-Type": "application/json"}
+        )
+        assert response.status_code == 400
+        assert "Bad Request" in response.text
