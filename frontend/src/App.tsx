@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import heartImg from './assets/shiny_tech_heart.png';
-import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge, HeartPulse, AlertTriangle, Home, ClipboardList, PieChart, Info, Map } from 'lucide-react';
+import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge, HeartPulse, AlertTriangle, Home, ClipboardList, PieChart, Info, Map, User, Stethoscope } from 'lucide-react';
 import RiskAssessment from './RiskAssessment';
 import PredictionResult from './PredictionResult';
 import ExplanationPage from './ExplanationPage';
 import RecoursePage from './RecoursePage';
+import AuthModal from './AuthModal';
 import { assessPatient } from './api';
 import type { PatientInput, AssessmentResponse } from './api';
 
@@ -15,6 +16,9 @@ const App = () => {
   const [assessmentData, setAssessmentData] = useState<AssessmentResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [authUser, setAuthUser] = useState<{ type: 'patient' | 'doctor'; name: string } | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
   useEffect(() => {
     setMounted(true);
@@ -46,7 +50,7 @@ const App = () => {
       {/* Global Falling Leaves Animation */}
       {currentPage !== 'prediction' && (
         <div className="leaves-container global-leaves">
-          {[...Array(25)].map((_, i) => {
+          {[...Array(7)].map((_, i) => {
             // On landing page, keep leaves on the right half
             // On other pages, let them fall everywhere
             const leftPos = (currentPage === 'landing') ? (55 + Math.random() * 40) : (5 + Math.random() * 90);
@@ -123,6 +127,13 @@ const App = () => {
         </div>
       )}
 
+      <AuthModal 
+        isOpen={isAuthOpen} 
+        onClose={() => setIsAuthOpen(false)} 
+        initialMode={authMode} 
+        onAuthenticate={(user) => setAuthUser(user)} 
+      />
+
       {/* Global Side Navigation Panel */}
       <div className="side-nav-panel">
         <button 
@@ -180,8 +191,21 @@ const App = () => {
               <Heart className="logo-heart-nav" size={28} />
             </div>
             <div className="nav-actions">
-              <button className="btn-login" onClick={() => setCurrentPage('assessment')}>Clinical Portal</button>
-              <button className="btn-signup" onClick={() => setCurrentPage('assessment')}>Assess Patient</button>
+              {authUser ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a', fontWeight: 600 }}>
+                    {authUser.type === 'doctor' ? <Stethoscope size={18} color="#0284c7" /> : <User size={18} color="#059669" />}
+                    <span>{authUser.name}</span>
+                  </div>
+                  <button className="btn-login" onClick={() => setAuthUser(null)}>Sign Out</button>
+                  <button className="btn-signup" onClick={() => setCurrentPage('assessment')}>New Assessment</button>
+                </div>
+              ) : (
+                <>
+                  <button className="btn-login" onClick={() => { setAuthMode('login'); setIsAuthOpen(true); }}>Log In</button>
+                  <button className="btn-signup" onClick={() => { setAuthMode('signup'); setIsAuthOpen(true); }}>Sign Up</button>
+                </>
+              )}
             </div>
           </nav>
 
