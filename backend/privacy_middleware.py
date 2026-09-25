@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Callable, Awaitable, Any, Dict, List
+from typing import Any, Dict, List
 from starlette.types import ASGIApp, Scope, Receive, Send
 
 from backend.privacy_rules import (
@@ -27,27 +27,29 @@ class PrivacySanitizationMiddleware:
             await self.app(scope, receive, send)
             return
 
+        path = scope.get("path", "")
+        if path.startswith("/auth") or path.startswith("/api/auth") or path.startswith("/doctor") or path.startswith("/api/doctor"):
+            await self.app(scope, receive, send)
+            return
+
         # 1. Network-Level Identifier Stripping
-        # Purge X-Forwarded-For, User-Agent, Referer, Client IP proxies
         original_headers = scope.get("headers", [])
-        cleaned_headers = [
-            (k, v) for k, v in original_headers
-            if k.lower() not in NETWORK_IDENTIFIER_HEADERS
-        ]
+        cleaned_headers = []
+        for k, v in original_headers:
+            k_bytes = k.lower() if isinstance(k, bytes) else str(k).lower().encode("utf-8")
+            if k_bytes not in NETWORK_IDENTIFIER_HEADERS:
+                cleaned_headers.append((k, v))
         scope["headers"] = cleaned_headers
 
         # 2. Client Socket Anonymization
-        # Mask original client IP address with anonymized localhost loopback
         scope["client"] = ("0.0.0.0", 0)
 
-        # Initialize privacy audit telemetry on request state
         if "state" not in scope:
             scope["state"] = {}
         scope["state"]["is_deidentified"] = True
         scope["state"]["purged_phi_keys"] = []
 
         # 3. Payload Body De-Identification
-        # Intercept incoming request stream, parse JSON, and strip direct text identifiers
         body_chunks = []
         more_body = True
         while more_body:
@@ -71,11 +73,9 @@ class PrivacySanitizationMiddleware:
                         logger.info(
                             f"[PrivacySanitizer] Purged {len(purged_keys)} direct PHI identifiers: {purged_keys}"
                         )
-                    # Zero-disk in-memory re-serialization
                     sanitized_body = json.dumps(sanitized_payload).encode("utf-8")
 
             except Exception:
-                # If payload is non-JSON or malformed, preserve original bytes for Pydantic validator to handle
                 sanitized_body = raw_body
 
         # 4. Construct Sanitized In-Memory Stream Receive Callable

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, ActivitySquare, ShieldAlert, ShieldCheck, AlertTriangle, Clock } from 'lucide-react';
+import { ArrowLeft, ActivitySquare, ShieldAlert, ShieldCheck, AlertTriangle, Clock, Dumbbell, Ban, Utensils, HeartPulse, Activity, Moon, Sun, Stethoscope } from 'lucide-react';
 import './PredictionResult.css';
 import heartImg from './assets/shiny_tech_heart.png';
 import type { PredictionResponse } from './api';
@@ -13,6 +13,17 @@ interface PredictionResultProps {
 
 export default function PredictionResult({ prediction, onBack, onNext, latencyMs }: PredictionResultProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
+
+  const orbitingIcons = [
+    { icon: Ban, color: '#ef4444', label: 'No Smoking' },
+    { icon: Dumbbell, color: '#8b5cf6', label: 'Exercise' },
+    { icon: Utensils, color: '#10b981', label: 'Healthy Diet' },
+    { icon: Moon, color: '#6366f1', label: 'Sleep' },
+    { icon: Activity, color: '#3b82f6', label: 'Active Lifestyle' },
+    { icon: Sun, color: '#f59e0b', label: 'Stress Mgmt' },
+    { icon: HeartPulse, color: '#f43f5e', label: 'Heart Check' },
+    { icon: Stethoscope, color: '#14b8a6', label: 'Consultation' },
+  ];
 
   // Smooth entry animation from 0 up to actual predicted risk percentage
   useEffect(() => {
@@ -118,8 +129,23 @@ export default function PredictionResult({ prediction, onBack, onNext, latencyMs
           <div className="result-right fade-up-delay">
             <div className="visual-centerpiece-result">
               <div className="heart-aura-result"></div>
-              <div className="orbit-ring-result r1"></div>
-              <div className="orbit-ring-result r2"></div>
+              
+              <div className="icon-orbit-container">
+                {orbitingIcons.map((item, i) => {
+                  const angle = (i / 8) * 360;
+                  return (
+                    <div key={i} className="orbit-icon-arm" style={{ transform: `rotate(${angle}deg)` }}>
+                      <div className="orbit-icon-distance">
+                        <div className="orbit-icon-inner" style={{ transform: `rotate(-${angle}deg)` }}>
+                           <div className="orbit-icon-counter-spin" title={item.label}>
+                             <item.icon size={20} color={item.color} />
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
               
               <div className="heart-wrapper-result">
                 <img src={heartImg} alt="AI Heart" className="heart-img-result heartbeat-anim-result" />

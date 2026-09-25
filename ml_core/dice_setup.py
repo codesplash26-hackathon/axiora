@@ -22,16 +22,23 @@ CANONICAL_FEATURES: List[str] = [
 class SafeModelWrapper:
     """
     Wraps the calibrated classifier to guarantee all DataFrames passed
-    by DiCE (which internally casts non-continuous features to object/str)
-    are sanitized back to float/int before inference by XGBoost.
+    by DiCE are sanitized back to float/int before inference by XGBoost,
+    and enforces the clinical 20% high-risk decision threshold.
     """
-    def __init__(self, base_model):
+    def __init__(self, base_model, threshold: float = 0.20):
         self.base_model = base_model
-        # Expose classes_ for scikit-learn compliance
+        self.threshold = threshold
         if hasattr(base_model, "classes_"):
             self.classes_ = base_model.classes_
         else:
             self.classes_ = np.array([0, 1])
+
+    def set_target_threshold(self, baseline_prob: float):
+        """Ensure baseline is strictly Class 1 and target is Class 0."""
+        if baseline_prob >= 0.20:
+            self.threshold = 0.20
+        else:
+            self.threshold = max(0.05, baseline_prob - 0.05)
 
     def _sanitize(self, X):
         if isinstance(X, pd.DataFrame):
@@ -46,6 +53,9 @@ class SafeModelWrapper:
         return self.base_model.predict_proba(self._sanitize(X))
 
     def predict(self, X):
+        probs = self.predict_proba(X)
+        if hasattr(probs, "ndim") and probs.ndim == 2 and probs.shape[1] >= 2:
+            return (probs[:, 1] >= self.threshold).astype(int)
         return self.base_model.predict(self._sanitize(X))
 
 
@@ -55,6 +65,7 @@ _genetic_explainer = None
 _schema = None
 _actionable_features = None
 _permitted_range = None
+_active_patient_context = None
 
 
 def load_schema() -> Dict[str, Any]:
@@ -75,24 +86,61 @@ def get_actionable_features() -> List[str]:
     return _actionable_features
 
 
-def get_permitted_range() -> Dict[str, List[Any]]:
-    global _permitted_range
-    if _permitted_range is None:
-        schema = load_schema()
-        actionable = schema["tiers"]["actionable"]
-        boundaries = schema["actionable_boundaries"]
-        feature_types = schema.get("feature_types", {})
+def set_active_patient_context(patient_dict: Optional[Dict[str, Any]]):
+    """Sets or clears the current active patient for dynamic range clamping."""
+    global _active_patient_context
+    _active_patient_context = patient_dict
 
-        p_range = {}
-        for feat in actionable:
-            b = boundaries[feat]
-            f_type = feature_types.get(feat, "continuous")
-            if f_type == "binary":
-                p_range[feat] = [str(int(b["min"])), str(int(b["max"]))]
+
+def set_model_recourse_threshold(baseline_prob: float):
+    """Aligns DiCE decision boundary with the patient's individual baseline risk."""
+    global _dice_model
+    init_dice_framework()
+    if _dice_model is not None and hasattr(_dice_model.model, "set_target_threshold"):
+        _dice_model.model.set_target_threshold(baseline_prob)
+
+
+def get_permitted_range(patient_dict: Optional[Dict[str, Any]] = None) -> Dict[str, List[Any]]:
+    """
+    Returns feature ranges. If a patient is provided (or set in context),
+    it dynamically clamps the upper bound of risk features to the patient's current value.
+    Prevents DiCE from ever suggesting worsening biomarkers.
+    """
+    target_patient = patient_dict if patient_dict is not None else _active_patient_context
+    schema = load_schema()
+    actionable = schema["tiers"]["actionable"]
+    boundaries = schema["actionable_boundaries"]
+    feature_types = schema.get("feature_types", {})
+
+    p_range = {}
+    unidirectional_harmful = ["sysBP", "diaBP", "totChol", "BMI", "glucose", "cigsPerDay"]
+
+    for feat in actionable:
+        b = boundaries[feat]
+        f_type = feature_types.get(feat, "continuous")
+
+        if f_type == "binary":
+            if target_patient is not None and feat in target_patient:
+                curr_val = int(target_patient[feat])
+                if feat == "currentSmoker":
+                    p_range[feat] = ["0", str(curr_val)]
+                elif feat == "BPMeds":
+                    p_range[feat] = [str(curr_val), "1"]
+                else:
+                    p_range[feat] = [str(int(b["min"])), str(int(b["max"]))]
             else:
-                p_range[feat] = [float(b["min"]), float(b["max"])]
-        _permitted_range = p_range
-    return _permitted_range
+                p_range[feat] = [str(int(b["min"])), str(int(b["max"]))]
+        else:
+            min_val = float(b["min"])
+            max_val = float(b["max"])
+            if target_patient is not None and feat in target_patient:
+                curr_val = float(target_patient[feat])
+                if feat in unidirectional_harmful:
+                    max_val = min(max_val, curr_val)
+                    min_val = min(min_val, max_val)
+            p_range[feat] = [min_val, max_val]
+
+    return p_range
 
 
 def init_dice_framework() -> Tuple[dice_ml.Data, dice_ml.Model, dice_ml.Dice]:
@@ -107,7 +155,7 @@ def init_dice_framework() -> Tuple[dice_ml.Data, dice_ml.Model, dice_ml.Dice]:
         raise FileNotFoundError(f"Cleaned dataset missing at {config.CLEAN_DATASET_PATH}")
 
     raw_calibrated = joblib.load(config.MODEL_PATH)
-    safe_model = SafeModelWrapper(raw_calibrated)
+    safe_model = SafeModelWrapper(raw_calibrated, threshold=0.20)
 
     clean_df = pd.read_csv(config.CLEAN_DATASET_PATH)
     schema = load_schema()
@@ -142,7 +190,6 @@ def get_genetic_explainer() -> dice_ml.Dice:
 
 
 def format_query_instance(patient_dict: Dict[str, Any]) -> pd.DataFrame:
-    """Format input dictionary into a canonical single-row DataFrame with correct dtypes."""
     schema = load_schema()
     feature_types = schema.get("feature_types", {})
 
@@ -157,11 +204,26 @@ def format_query_instance(patient_dict: Dict[str, Any]) -> pd.DataFrame:
             row[col] = float(patient_dict[col])
     return pd.DataFrame([row], columns=CANONICAL_FEATURES)
 
-
+"""
+Root-level gateway for DiCE setup module.
+Exposes all components from ml_core.dice_setup.
+"""
+from ml_core.dice_setup import (
+    SafeModelWrapper,
+    CANONICAL_FEATURES,
+    load_schema,
+    get_actionable_features,
+    get_permitted_range,
+    set_active_patient_context,
+    set_model_recourse_threshold,
+    init_dice_framework,
+    get_dice_data,
+    get_dice_model,
+    get_genetic_explainer,
+    format_query_instance,
+)
 
 if __name__ == "__main__":
-    print("Initializing DiCE setup...")
+    print("Testing root dice_setup gateway...")
     d, m, exp = init_dice_framework()
-    print("Actionable Features:", get_actionable_features())
-    print("Permitted Ranges:", get_permitted_range())
-    print("DiCE Framework operational.")
+    print("Root dice_setup operational.")

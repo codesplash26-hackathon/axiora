@@ -2,12 +2,12 @@ import os
 import asyncio
 import functools
 import multiprocessing
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Any, Optional
 
 from backend.worker import warmup_worker, worker_ping
 
-process_pool: Optional[ProcessPoolExecutor] = None
+process_pool: Optional[ThreadPoolExecutor] = None
 
 
 def get_worker_count() -> int:
@@ -17,11 +17,11 @@ def get_worker_count() -> int:
 
 
 def init_pool():
-    """Initialize process pool executor with eager warmup workers."""
+    """Initialize thread pool executor."""
     global process_pool
     if process_pool is None:
         workers = get_worker_count()
-        process_pool = ProcessPoolExecutor(max_workers=workers, initializer=warmup_worker)
+        process_pool = ThreadPoolExecutor(max_workers=workers, initializer=warmup_worker)
         try:
             list(process_pool.map(worker_ping, range(workers)))
         except Exception:
@@ -29,8 +29,8 @@ def init_pool():
 
 
 
-def get_executor() -> ProcessPoolExecutor:
-    """Returns or lazily creates the singleton process pool."""
+def get_executor() -> ThreadPoolExecutor:
+    """Returns or lazily creates the singleton thread pool."""
     global process_pool
     if process_pool is None:
         init_pool()

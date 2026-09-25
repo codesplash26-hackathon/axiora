@@ -104,7 +104,7 @@ export default function RiskAssessment({ onBack, onAnalyze, isLoading }: RiskAss
       {/* Main Content Area */}
       <main className="assessment-main">
         <div className="assessment-header">
-          <h1 className="assessment-title">Clinical Risk Assessment</h1>
+          <h1 className="assessment-title shiny-heading-text">Clinical Risk Assessment</h1>
           <p className="assessment-subtitle">
             Provide patient biomarkers and history for calibrated 10-year CHD prediction and prescriptive recourse.
           </p>

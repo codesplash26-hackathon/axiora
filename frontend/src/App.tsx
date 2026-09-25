@@ -1,20 +1,23 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import heartImg from './assets/shiny_tech_heart.png';
-import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge, HeartPulse, AlertTriangle } from 'lucide-react';
+import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge, HeartPulse, AlertTriangle, Home, ClipboardList, PieChart, Info, Map, User, Stethoscope } from 'lucide-react';
 import RiskAssessment from './RiskAssessment';
 import PredictionResult from './PredictionResult';
 import ExplanationPage from './ExplanationPage';
 import RecoursePage from './RecoursePage';
+import DoctorLoginModal from './DoctorLoginModal';
 import { assessPatient } from './api';
 import type { PatientInput, AssessmentResponse } from './api';
 
 const App = () => {
   const [mounted, setMounted] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'landing' | 'assessment' | 'prediction' | 'explanation' | 'recourse'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'assessment' | 'prediction' | 'explanation' | 'recourse' | 'doctor-dashboard'>('landing');
   const [assessmentData, setAssessmentData] = useState<AssessmentResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [doctorUser, setDoctorUser] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [isDoctorLoginOpen, setIsDoctorLoginOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -44,12 +47,13 @@ const App = () => {
   return (
     <>
       {/* Global Falling Leaves Animation */}
-      <div className="leaves-container global-leaves">
-        {[...Array(25)].map((_, i) => {
-          // On landing page, keep leaves on the right half (near the heart, 55% to 95%)
-          // On other pages, let them fall everywhere (5% to 95%)
-          const leftPos = currentPage === 'landing' ? (55 + Math.random() * 40) : (5 + Math.random() * 90);
-          return (
+      {currentPage !== 'prediction' && (
+        <div className="leaves-container global-leaves">
+          {[...Array(7)].map((_, i) => {
+            // On landing page, keep leaves on the right half
+            // On other pages, let them fall everywhere
+            const leftPos = (currentPage === 'landing') ? (55 + Math.random() * 40) : (5 + Math.random() * 90);
+            return (
             <div key={i} className={`global-falling-leaf g-leaf-${(i % 4) + 1}`} style={{
               left: `${leftPos}%`,
               animationDelay: `${Math.random() * 5}s`,
@@ -58,6 +62,7 @@ const App = () => {
           );
         })}
       </div>
+      )}
 
       {/* Global Real-Time Loading Overlay */}
       {isLoading && (
@@ -121,6 +126,63 @@ const App = () => {
         </div>
       )}
 
+      <DoctorLoginModal 
+        isOpen={isDoctorLoginOpen} 
+        onClose={() => setIsDoctorLoginOpen(false)} 
+        onLogin={(doc) => {
+          setDoctorUser(doc);
+          setCurrentPage('doctor-dashboard');
+        }}
+      />
+
+      {/* Global Side Navigation Panel */}
+      <div className="side-nav-panel">
+        <button 
+          className={`side-nav-item ${currentPage === 'landing' ? 'active' : ''}`}
+          data-tooltip="Home"
+          onClick={() => setCurrentPage('landing')}
+        >
+          <Home size={20} />
+        </button>
+        <button 
+          className={`side-nav-item ${currentPage === 'assessment' ? 'active' : ''}`}
+          data-tooltip="Risk Assessment"
+          onClick={() => setCurrentPage('assessment')}
+        >
+          <ClipboardList size={20} />
+        </button>
+        <button 
+          className={`side-nav-item ${currentPage === 'prediction' ? 'active' : ''}`}
+          data-tooltip="Prediction Results"
+          onClick={() => {
+            if (assessmentData) setCurrentPage('prediction');
+            else setCurrentPage('assessment');
+          }}
+        >
+          <PieChart size={20} />
+        </button>
+        <button 
+          className={`side-nav-item ${currentPage === 'explanation' ? 'active' : ''}`}
+          data-tooltip="AI Explanation (SHAP)"
+          onClick={() => {
+            if (assessmentData) setCurrentPage('explanation');
+            else setCurrentPage('assessment');
+          }}
+        >
+          <Info size={20} />
+        </button>
+        <button 
+          className={`side-nav-item ${currentPage === 'recourse' ? 'active' : ''}`}
+          data-tooltip="Action Plan (DiCE)"
+          onClick={() => {
+            if (assessmentData) setCurrentPage('recourse');
+            else setCurrentPage('assessment');
+          }}
+        >
+          <Map size={20} />
+        </button>
+      </div>
+
       {currentPage === 'landing' ? (
         <div className={`landing-container ${mounted ? 'mounted' : ''}`}>
 
@@ -130,8 +192,20 @@ const App = () => {
               <Heart className="logo-heart-nav" size={28} />
             </div>
             <div className="nav-actions">
-              <button className="btn-login" onClick={() => setCurrentPage('assessment')}>Clinical Portal</button>
-              <button className="btn-signup" onClick={() => setCurrentPage('assessment')}>Assess Patient</button>
+              {doctorUser ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a', fontWeight: 600 }}>
+                    <Stethoscope size={18} color="#0284c7" />
+                    <span>{doctorUser.name}</span>
+                  </div>
+                  <button className="btn-login" onClick={() => { setDoctorUser(null); setCurrentPage('landing'); }}>Sign Out</button>
+                  <button className="btn-signup" onClick={() => setCurrentPage('doctor-dashboard')}>Dashboard</button>
+                </div>
+              ) : (
+                <button className="btn-signup" onClick={() => setIsDoctorLoginOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Stethoscope size={18} /> Doctor Portal
+                </button>
+              )}
             </div>
           </nav>
 
@@ -331,6 +405,12 @@ const App = () => {
           onBack={() => setCurrentPage('explanation')}
           onHome={handleReset}
         />
+      ) : currentPage === 'doctor-dashboard' && doctorUser ? (
+        <div className="flex-center" style={{ minHeight: '100vh', background: '#f8fafc', color: '#334155', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <Stethoscope size={48} color="#0284c7" />
+          <h2 style={{ fontSize: '2rem' }}>Doctor Dashboard</h2>
+          <p>This protected view is under construction for the next step of the plan.</p>
+        </div>
       ) : (
         <RiskAssessment 
           onBack={() => setCurrentPage('landing')} 

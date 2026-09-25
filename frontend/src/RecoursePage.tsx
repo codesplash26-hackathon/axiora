@@ -27,7 +27,7 @@ export default function RecoursePage({ recourse, onBack, onHome }: RecoursePageP
 
       <main className="recourse-main">
         <div className="recourse-header fade-up">
-          <h1 className="recourse-title">Prescriptive Recourse Pathways</h1>
+          <h1 className="recourse-title shiny-heading-text">Prescriptive Recourse Pathways</h1>
           <p className="recourse-subtitle">
             Feasible, minimal-effort biomarker adjustments generated via Diverse Counterfactual Explanations (DiCE) to reduce cardiovascular risk below the critical threshold.
           </p>
