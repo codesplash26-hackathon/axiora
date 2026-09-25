@@ -14,3 +14,48 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+
+/* Global Falling Leaves Animation */
+.leaves-container.global-leaves {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.global-falling-leaf {
+  position: absolute;
+  top: -10%;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px 10px 2px 10px;
+  opacity: 0.6;
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* Colors for leaves */
+.g-leaf-1 { background: #ef4444; } /* Red */
+.g-leaf-2 { background: #eab308; } /* Yellow */
+.g-leaf-3 { background: #3b82f6; } /* Blue */
+.g-leaf-4 { background: #22c55e; } /* Green */
+
+@keyframes fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg) translateX(0);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(45vh) rotate(180deg) translateX(20px);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(110vh) rotate(360deg) translateX(-20px);
+    opacity: 0;
+  }
+}

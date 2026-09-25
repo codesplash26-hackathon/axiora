@@ -26,21 +26,6 @@ export default function ExplanationPage({ explanation, onBack, onNext }: Explana
 
   return (
     <div className="explanation-container">
-      {/* Falling Leaves Animation */}
-      <div className="leaves-container">
-        {[...Array(12)].map((_, i) => (
-          <div 
-            key={i} 
-            className={`leaf leaf-${(i % 4) + 1}`} 
-            style={{
-              left: `${(i * 8.3).toFixed(1)}%`,
-              animationDelay: `${(i * 0.4).toFixed(1)}s`,
-              animationDuration: `${6 + (i % 3)}s`
-            }}
-          ></div>
-        ))}
-      </div>
-
       <nav className="explanation-nav">
         <button className="btn-back" onClick={onBack}>
           <ArrowLeft size={20} /> Back to Result
