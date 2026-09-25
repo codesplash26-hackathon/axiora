@@ -37,7 +37,7 @@ export default function ExplanationPage({ explanation, onBack, onNext }: Explana
         <div className="explanation-header fade-up">
           <h1 className="explanation-title shiny-heading-text">Diagnostic Risk Attribution</h1>
           <p className="explanation-subtitle">
-            Local SHAP (SHapley Additive exPlanations) values explaining patient divergence from population baseline ({baselinePctDisplay}%).
+            Local SHAP (SHapley Additive exPlanations) margin values explaining patient log-odds divergence from population baseline ({baselinePctDisplay}%).
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export default function ExplanationPage({ explanation, onBack, onNext }: Explana
                 const isModifiable = !NON_MODIFIABLE_FEATURES.has(factor.feature);
                 const absVal = Math.abs(factor.attribution_value);
                 const barWidth = Math.min(100, Math.max(14, Math.round((absVal / maxAbsVal) * 88)));
-                const formattedVal = `${factor.attribution_value >= 0 ? '+' : ''}${(factor.attribution_value * 100).toFixed(1)}%`;
+                const formattedVal = `${factor.attribution_value >= 0 ? '+' : ''}${factor.attribution_value.toFixed(2)} log-odds`;
                 const isIncrease = factor.direction === 'risk_increasing';
 
                 return (
@@ -92,11 +92,11 @@ export default function ExplanationPage({ explanation, onBack, onNext }: Explana
             <div className="chart-legend">
               <div className="legend-item">
                 <div className="legend-color decrease-color"></div>
-                <span>Protective / Lowers Risk</span>
+                <span>Protective Factor (Reduces ASCVD Log-Odds)</span>
               </div>
               <div className="legend-item">
                 <div className="legend-color increase-color"></div>
-                <span>Risk Increasing</span>
+                <span>Risk Driver (Elevates ASCVD Log-Odds)</span>
               </div>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function ExplanationPage({ explanation, onBack, onNext }: Explana
                 The TreeExplainer decomposed your individual <strong>{riskPctDisplay}%</strong> risk score relative to the population expectation of <strong>{baselinePctDisplay}%</strong>.
               </p>
               <p className="info-text">
-                Factors extending to the <strong>right</strong> increase cardiovascular risk, while bars to the <strong>left</strong> indicate protective features.
+                Factors extending to the <strong>right</strong> increase cardiovascular log-odds risk, while bars to the <strong>left</strong> indicate protective features.
               </p>
             </div>
 
@@ -121,8 +121,8 @@ export default function ExplanationPage({ explanation, onBack, onNext }: Explana
                   <div>
                     <h4>{topModifiableRisk.display_name}</h4>
                     <p>
-                      This modifiable biomarker currently adds{' '}
-                      <strong>+{(topModifiableRisk.attribution_value * 100).toFixed(1)}%</strong> to the patient&apos;s overall risk.
+                      This modifiable biomarker currently contributes{' '}
+                      <strong>+{topModifiableRisk.attribution_value.toFixed(2)} log-odds</strong> to the patient&apos;s overall risk profile.
                     </p>
                   </div>
                 </div>

@@ -68,19 +68,42 @@ export interface AssessmentResponse {
   total_latency_ms: number;
 }
 
-export async function assessPatient(payload: PatientInput): Promise<AssessmentResponse> {
-  const response = await fetch('/api/assess', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+export async function assessPatient(
+  payload: PatientInput,
+  externalSignal?: AbortSignal
+): Promise<AssessmentResponse> {
+  const controller = new AbortController();
+  const timeoutMs = 10000;
+  const timeoutId = setTimeout(() => {
+    controller.abort(new Error('Inference request timed out after 10 seconds.'));
+  }, timeoutMs);
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: 'Network error' }));
-    throw new Error(errorData.detail || `Server error: ${response.status}`);
+  if (externalSignal) {
+    externalSignal.addEventListener('abort', () => controller.abort());
   }
 
-  return response.json();
+  try {
+    const response = await fetch('/api/assess', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ detail: 'Network error' }));
+      throw new Error(errorData.detail || `Server error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('Clinical inference SLA exceeded: The request timed out after 10 seconds.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }

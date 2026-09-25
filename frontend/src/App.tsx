@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import heartImg from './assets/shiny_tech_heart.png';
-import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge, HeartPulse, AlertTriangle, Home, ClipboardList, PieChart, Info, Map, User, Stethoscope, Sunrise } from 'lucide-react';
+import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge, HeartPulse, AlertTriangle, Home, ClipboardList, PieChart, Info, Map, Stethoscope, Sunrise } from 'lucide-react';
 import RiskAssessment from './RiskAssessment';
 import PredictionResult from './PredictionResult';
 import ExplanationPage from './ExplanationPage';

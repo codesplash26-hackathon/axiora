@@ -38,14 +38,25 @@ export default function RiskAssessment({ onBack, onAnalyze, isLoading }: RiskAss
   const updateField = <K extends keyof PatientInput>(key: K, value: PatientInput[K]) => {
     setFormData((prev) => {
       const updated = { ...prev, [key]: value };
-      // Enforce smoking coherence rule
+
+      // Enforce bidirectional smoking coherence rules
       if (key === 'currentSmoker') {
         if (value === 0) {
           updated.cigsPerDay = 0;
         } else if (value === 1 && prev.cigsPerDay === 0) {
           updated.cigsPerDay = 10;
         }
+      } else if (key === 'cigsPerDay') {
+        const cigs = Number(value);
+        if (cigs <= 0) {
+          updated.currentSmoker = 0;
+          updated.cigsPerDay = 0;
+        } else {
+          updated.currentSmoker = 1;
+          updated.cigsPerDay = Math.min(70, Math.max(0, cigs));
+        }
       }
+
       return updated;
     });
   };
@@ -76,7 +87,15 @@ export default function RiskAssessment({ onBack, onAnalyze, isLoading }: RiskAss
       e.stopPropagation();
     }
     if (currentStep === 3 && !isLoading) {
-      onAnalyze(formData);
+      // Final client-side sanitization to guarantee Pydantic schema compliance
+      const sanitized = { ...formData };
+      if (sanitized.currentSmoker === 0) {
+        sanitized.cigsPerDay = 0;
+      } else if (sanitized.cigsPerDay <= 0) {
+        sanitized.currentSmoker = 0;
+        sanitized.cigsPerDay = 0;
+      }
+      onAnalyze(sanitized);
     }
   };
 
