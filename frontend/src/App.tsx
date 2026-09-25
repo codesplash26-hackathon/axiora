@@ -44,12 +44,13 @@ const App = () => {
   return (
     <>
       {/* Global Falling Leaves Animation */}
-      <div className="leaves-container global-leaves">
-        {[...Array(25)].map((_, i) => {
-          // On landing and prediction pages, keep leaves on the right half (near the heart, 55% to 95%)
-          // On other pages, let them fall everywhere (5% to 95%)
-          const leftPos = (currentPage === 'landing' || currentPage === 'prediction') ? (55 + Math.random() * 40) : (5 + Math.random() * 90);
-          return (
+      {currentPage !== 'prediction' && (
+        <div className="leaves-container global-leaves">
+          {[...Array(25)].map((_, i) => {
+            // On landing page, keep leaves on the right half
+            // On other pages, let them fall everywhere
+            const leftPos = (currentPage === 'landing') ? (55 + Math.random() * 40) : (5 + Math.random() * 90);
+            return (
             <div key={i} className={`global-falling-leaf g-leaf-${(i % 4) + 1}`} style={{
               left: `${leftPos}%`,
               animationDelay: `${Math.random() * 5}s`,
@@ -58,6 +59,7 @@ const App = () => {
           );
         })}
       </div>
+      )}
 
       {/* Global Real-Time Loading Overlay */}
       {isLoading && (

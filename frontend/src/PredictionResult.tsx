@@ -64,6 +64,18 @@ export default function PredictionResult({ prediction, onBack, onNext, latencyMs
 
             <div className="gauge-container">
               <svg className="risk-gauge" viewBox="0 0 200 200">
+                <defs>
+                  <filter id="gauge-glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComponentTransfer in="blur" result="glow">
+                      <feFuncA type="linear" slope="1.5"/>
+                    </feComponentTransfer>
+                    <feMerge>
+                      <feMergeNode in="glow"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
                 {/* Background Track */}
                 <circle cx="100" cy="100" r="80" fill="none" stroke="#e2e8f0" strokeWidth="12" />
                 {/* Dynamic Progress Fill */}
@@ -77,6 +89,7 @@ export default function PredictionResult({ prediction, onBack, onNext, latencyMs
                   strokeLinecap="round"
                   className="gauge-fill"
                   style={{ strokeDasharray: 502, strokeDashoffset: 502 - (502 * Math.min(100, animatedScore)) / 100 }}
+                  filter="url(#gauge-glow)"
                 />
               </svg>
               <div className="gauge-center">
