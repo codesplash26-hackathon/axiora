@@ -27,6 +27,11 @@ class PrivacySanitizationMiddleware:
             await self.app(scope, receive, send)
             return
 
+        path = scope.get("path", "")
+        if path.startswith("/auth") or path.startswith("/api/auth") or path.startswith("/doctor") or path.startswith("/api/doctor"):
+            await self.app(scope, receive, send)
+            return
+
         # 1. Network-Level Identifier Stripping
         original_headers = scope.get("headers", [])
         cleaned_headers = []

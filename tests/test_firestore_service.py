@@ -98,6 +98,7 @@ def test_patient_crud_and_overview():
 def test_assessment_and_action_plan_subcollections():
     doctor_id = "doc_test_subcol"
     patient = create_patient(doctor_id, {
+        "patientId": "PID-SUBCOL-TEST",
         "fullName": "Rohan Wickrama",
         "age": 60,
         "sex": "Male",
