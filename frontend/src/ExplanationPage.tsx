@@ -35,7 +35,7 @@ export default function ExplanationPage({ explanation, onBack, onNext }: Explana
 
       <main className="explanation-main">
         <div className="explanation-header fade-up">
-          <h1 className="explanation-title">Diagnostic Risk Attribution</h1>
+          <h1 className="explanation-title shiny-heading-text">Diagnostic Risk Attribution</h1>
           <p className="explanation-subtitle">
             Local SHAP (SHapley Additive exPlanations) values explaining patient divergence from population baseline ({baselinePctDisplay}%).
           </p>
