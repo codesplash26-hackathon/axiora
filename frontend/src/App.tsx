@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import heartImg from './assets/shiny_tech_heart.png';
-import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge, HeartPulse, AlertTriangle } from 'lucide-react';
+import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge, HeartPulse, AlertTriangle, Home, ClipboardList, PieChart, Info, Map } from 'lucide-react';
 import RiskAssessment from './RiskAssessment';
 import PredictionResult from './PredictionResult';
 import ExplanationPage from './ExplanationPage';
@@ -120,6 +120,54 @@ const App = () => {
           </button>
         </div>
       )}
+
+      {/* Global Side Navigation Panel */}
+      <div className="side-nav-panel">
+        <button 
+          className={`side-nav-item ${currentPage === 'landing' ? 'active' : ''}`}
+          data-tooltip="Home"
+          onClick={() => setCurrentPage('landing')}
+        >
+          <Home size={20} />
+        </button>
+        <button 
+          className={`side-nav-item ${currentPage === 'assessment' ? 'active' : ''}`}
+          data-tooltip="Risk Assessment"
+          onClick={() => setCurrentPage('assessment')}
+        >
+          <ClipboardList size={20} />
+        </button>
+        <button 
+          className={`side-nav-item ${currentPage === 'prediction' ? 'active' : ''}`}
+          data-tooltip="Prediction Results"
+          onClick={() => {
+            if (assessmentData) setCurrentPage('prediction');
+            else setCurrentPage('assessment');
+          }}
+        >
+          <PieChart size={20} />
+        </button>
+        <button 
+          className={`side-nav-item ${currentPage === 'explanation' ? 'active' : ''}`}
+          data-tooltip="AI Explanation (SHAP)"
+          onClick={() => {
+            if (assessmentData) setCurrentPage('explanation');
+            else setCurrentPage('assessment');
+          }}
+        >
+          <Info size={20} />
+        </button>
+        <button 
+          className={`side-nav-item ${currentPage === 'recourse' ? 'active' : ''}`}
+          data-tooltip="Action Plan (DiCE)"
+          onClick={() => {
+            if (assessmentData) setCurrentPage('recourse');
+            else setCurrentPage('assessment');
+          }}
+        >
+          <Map size={20} />
+        </button>
+      </div>
 
       {currentPage === 'landing' ? (
         <div className={`landing-container ${mounted ? 'mounted' : ''}`}>
