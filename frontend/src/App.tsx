@@ -314,9 +314,6 @@ const App = () => {
                 <button className="btn-primary" onClick={() => setCurrentPage('assessment')}>
                   Check My Risk <span className="arrow">→</span>
                 </button>
-                <button className="btn-secondary" onClick={() => setCurrentPage('assessment')}>
-                  See How It Works
-                </button>
               </div>
 
               <div className="features-row fade-up-4">

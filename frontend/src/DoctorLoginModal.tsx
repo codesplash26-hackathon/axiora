@@ -9,6 +9,7 @@ interface DoctorLoginModalProps {
 }
 
 export default function DoctorLoginModal({ isOpen, onClose, onLogin }: DoctorLoginModalProps) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -16,8 +17,8 @@ export default function DoctorLoginModal({ isOpen, onClose, onLogin }: DoctorLog
 
   const handleStandardLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock standard login
-    onLogin({ id: 'doc-002', name: 'Dr. Clinician', email });
+    // Use the entered name, fallback to a default if empty somehow
+    onLogin({ id: 'doc-002', name: name.trim() ? `Dr. ${name.replace(/^Dr\.\s*/i, '')}` : 'Dr. Clinician', email });
     onClose();
   };
 
@@ -43,6 +44,19 @@ export default function DoctorLoginModal({ isOpen, onClose, onLogin }: DoctorLog
         </div>
 
         <form className="auth-form" onSubmit={handleStandardLogin}>
+          <div className="input-group">
+            <label>Doctor Name</label>
+            <div className="input-wrapper">
+              <Stethoscope size={18} className="input-icon" />
+              <input 
+                type="text" 
+                placeholder="e.g. John Doe" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required 
+              />
+            </div>
+          </div>
           <div className="input-group">
             <label>Clinical Email</label>
             <div className="input-wrapper">

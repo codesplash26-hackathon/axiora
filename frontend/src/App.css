@@ -41,7 +41,7 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  padding: 1.5rem 4rem;
+  padding: 1.5rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -315,7 +315,7 @@ body {
   flex-direction: column;
   justify-content: center;
   padding-right: 2rem;
-  margin-left: 2.5rem;
+  margin-left: 6rem; /* Pushed further to the right */
   z-index: 3;
 }
 
@@ -457,6 +457,7 @@ body {
   gap: 1.5rem;
   margin-bottom: 2rem;
   align-items: center;
+  justify-content: center; /* Centered in its section */
 }
 
 .btn-primary {
