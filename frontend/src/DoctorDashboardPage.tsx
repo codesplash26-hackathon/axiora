@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import './DoctorDashboard.css';
 import {
   Heart,
-  Stethoscope,
   Users,
   Activity,
   Target,
@@ -16,6 +15,7 @@ import {
   UserPlus,
   Home,
   Pencil,
+  LogOut,
 } from 'lucide-react';
 import {
   getDoctorOverview,
@@ -282,45 +282,85 @@ export default function DoctorDashboardPage({
     }
   };
 
+  const doctorInitials = (doctor.fullName || doctor.email || 'DR')
+    .replace(/^Dr\.\s*/i, '')
+    .trim()
+    .split(/\s+/)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || 'DR';
+
   return (
     <div className="doctor-dashboard-container">
-      {/* Doctor Navbar */}
-      <nav className="doctor-navbar">
+      {/* Sleek Executive Clinical Header */}
+      <header className="doctor-navbar">
+        {/* Left: Brand Identity */}
         <div
-          className={`doctor-nav-brand ${onGoHome ? 'clickable' : ''}`}
           onClick={onGoHome}
-          title={onGoHome ? 'Return to Home / Overview' : undefined}
+          className="doctor-nav-brand"
+          title={onGoHome ? "Return to Home / Overview" : undefined}
+          role={onGoHome ? "button" : undefined}
+          tabIndex={onGoHome ? 0 : undefined}
+          onKeyDown={(e) => {
+            if (onGoHome && (e.key === 'Enter' || e.key === ' ')) {
+              e.preventDefault();
+              onGoHome();
+            }
+          }}
         >
-          <Heart size={24} color="#38bdf8" />
-          <span>
-            CardioRecourse{' '}
-            <span style={{ color: '#94a3b8', fontWeight: 500 }}>
-              | Clinical Decision Portal
+          <div className="brand-icon-squircle">
+            <Heart size={20} color="#ffffff" fill="rgba(255, 255, 255, 0.25)" />
+          </div>
+          <div className="brand-text-group">
+            <span className="brand-title">
+              Cardio<span className="accent">Recourse</span>
             </span>
-          </span>
+            <span className="brand-portal-badge">
+              Clinical Decision Portal
+            </span>
+          </div>
         </div>
-        <div className="doctor-nav-user">
+
+        {/* Right: Actions, Doctor Avatar Chip & Sign Out */}
+        <div className="doctor-nav-actions">
           {onGoHome && (
             <button
-              className="btn-doctor-nav"
+              className="btn-doctor-overview"
               onClick={onGoHome}
               title="Return to Home / Overview without signing out"
             >
-              <Home size={16} /> Home / Overview
+              <Home size={15} color="#64748b" />
+              <span>Overview</span>
             </button>
           )}
-          <div className="doctor-user-info">
-            <Stethoscope size={18} color="#38bdf8" />
-            <span>{doctor.fullName || `Dr. ${doctor.email}`}</span>
-            <span style={{ color: '#64748b', fontSize: '0.8rem' }}>
-              ({doctor.hospital || 'Hospital Staff'})
-            </span>
+
+          {/* Doctor Profile Chip */}
+          <div className="doctor-profile-chip" title={doctor.specialization || "Clinical Staff"}>
+            <div className="doctor-avatar-circle">
+              {doctorInitials}
+            </div>
+            <div className="doctor-meta">
+              <span className="doctor-meta-name">
+                {doctor.fullName || `Dr. ${doctor.email}`}
+              </span>
+              <span className="doctor-meta-hospital">
+                {doctor.hospital || 'Hospital Staff'}
+              </span>
+            </div>
           </div>
-          <button className="btn-doctor-logout" onClick={onLogout}>
-            Sign Out
+
+          {/* Sign Out */}
+          <button
+            className="btn-doctor-signout"
+            onClick={onLogout}
+            title="Sign Out of Clinical Session"
+          >
+            <LogOut size={14} />
+            <span>Sign Out</span>
           </button>
         </div>
-      </nav>
+      </header>
 
       {/* Main Content */}
       <div className="dashboard-content">

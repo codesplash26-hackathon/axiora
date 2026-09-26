@@ -259,10 +259,26 @@ const App = () => {
             </div>
             <div className="nav-actions">
               {doctorUser ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a', fontWeight: 600 }}>
-                    <Stethoscope size={18} color="#0284c7" />
-                    <span>{doctorUser.fullName || doctorUser.email}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                  <div className="doctor-profile-chip" style={{ background: 'rgba(255, 255, 255, 0.92)', borderColor: '#cbd5e1', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                    <div className="doctor-avatar-circle" style={{ width: '26px', height: '26px', fontSize: '10px' }}>
+                      {(doctorUser.fullName || doctorUser.email || 'DR')
+                        .replace(/^Dr\.\s*/i, '')
+                        .trim()
+                        .split(/\s+/)
+                        .map((n) => n[0])
+                        .slice(0, 2)
+                        .join('')
+                        .toUpperCase() || 'DR'}
+                    </div>
+                    <div className="doctor-meta">
+                      <span className="doctor-meta-name" style={{ color: '#0f172a' }}>
+                        {doctorUser.fullName || doctorUser.email}
+                      </span>
+                      <span className="doctor-meta-hospital" style={{ color: '#64748b' }}>
+                        {doctorUser.hospital || 'Hospital Staff'}
+                      </span>
+                    </div>
                   </div>
                   <button className="btn-login" onClick={handleDoctorLogout}>Sign Out</button>
                   <button className="btn-signup" onClick={() => setCurrentPage('doctor-dashboard')}>Dashboard</button>
