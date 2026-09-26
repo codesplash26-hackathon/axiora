@@ -1,0 +1,33 @@
+FROM python:3.11-slim
+
+# Set environment variables for container stability and performance
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    OMP_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    PYTHONPATH=/app
+
+WORKDIR /app
+
+# Install minimal build tools and curl for health check
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy root scripts and modules
+COPY config.py ml_engine.py dice_setup.py dice_fallback_solver.py privacy_middleware.py ./
+
+# Copy core application directories
+COPY backend/ ./backend/
+COPY ml_core/ ./ml_core/
+COPY artifacts/ ./artifacts/
+COPY data/ ./data/
+
+EXPOSE 8000
+
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
