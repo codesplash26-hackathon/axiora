@@ -43,9 +43,7 @@ htmlcov/
 # Environments & Local Secrets
 .env
 .env.local
-serviceAccountKey.json
-*.serviceAccountKey.json
-credentials.json
+
 
 # IDEs & Editors
 .vscode/
