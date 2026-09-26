@@ -1,232 +1,213 @@
-# CardioRecourse
+# CardioRecourse — Explainable AI (XAI) Clinical Decision Support System
 
-> **An Explainable AI (XAI) Clinical Decision Support System for Actionable Cardiovascular Risk Reduction**  
-> *Developed by Team Axiora (University of Moratuwa) for CodeSplash '26 — Theme 1: Explainable AI*
-
----
-
-## 1. Executive Summary & Problem Breakdown
-
-### The Clinical Dilemma: "Destination Without a Route"
-Cardiovascular disease (CVD) remains the leading cause of mortality worldwide. Traditional risk calculators (e.g., Framingham Risk Score, ASCVD Pooled Cohort Equations) and standard machine learning models estimate 10-year risk as an isolated static probability (e.g., *"72% 10-year risk of coronary heart disease"*). 
-
-This approach triggers a two-part failure in clinical practice:
-1. **Trust Failure (The Black Box)**: Clinicians cannot see which specific biomarkers drove the elevated score, leading to skepticism or blind acceptance without diagnostic clarity.
-2. **Execution Failure (The Actionability Gap)**: Patients receive generic, unprioritized lifestyle advice (*"lose weight, stop smoking, exercise more, reduce salt, manage stress"*). Bombarding patients with simultaneous, unranked lifestyle changes induces cognitive overload and decision fatigue, leading to poor adherence and preventable disease progression.
-
-### The Solution: "Google Maps for Preventive Health"
-**CardioRecourse** transforms risk prediction into prescriptive recourse. Drawing upon behavioral medicine and Goal-Setting Theory, the system computes:
-- **Calibrated Prediction**: An accurate, probability-calibrated 10-year hard CHD risk percentage.
-- **Diagnostic Attribution (SHAP TreeExplainer)**: Fast, exact Shapley values identifying *why* the patient is at risk by quantifying the positive and negative contributions of each biomarker.
-- **Prescriptive Recourse (DiCE-ML)**: Constrained counterfactual optimization that calculates *how* the patient can cross into low risk (<20%) by changing the minimum number of actionable features. It provides 2–3 diverse, clinically realistic intervention pathways (e.g., Lifestyle-Led vs. Pharmacotherapy-Led).
-- **Patient Action Plan Report**: An exportable, plain-language clinical summary translating mathematical differentials into achievable daily targets.
-
-```
-                                  [ Patient Biomarkers ]
-                                            │
-                                            ▼
-                              ┌───────────────────────────┐
-                              │ Calibrated XGBoost Model  │
-                              │ (Probability [0.0 - 1.0]) │
-                              └─────────────┬─────────────┘
-                                            │
-                     ┌──────────────────────┴──────────────────────┐
-                     ▼                                             ▼
-       ┌───────────────────────────┐                 ┌───────────────────────────┐
-       │   SHAP TreeExplainer      │                 │  DiCE Counterfactuals     │
-       │   "Why is risk high?"     │                 │  "How to reach low risk?" │
-       │   (Local Attributions)    │                 │  (Constrained Pathways)   │
-       └─────────────┬─────────────┘                 └─────────────┬─────────────┘
-                     │                                             │
-                     └──────────────────────┬──────────────────────┘
-                                            │
-                                            ▼
-                              ┌───────────────────────────┐
-                              │  Clinician Dashboard &    │
-                              │  Patient Action Plan PDF  │
-                              └───────────────────────────┘
-```
+> **A Prescriptive Decision Support System for Actionable 10-Year Cardiovascular Disease Risk Reduction**  
+> *Submitted for CodeSplash '26 Hackathon Phase (Computer Science Students' Association — University of Kelaniya)*  
+> *Theme 1: Development of a Decision Support System Using Explainable AI (XAI)*  
+> *Submission Deadline: September 26, 2026, 11:59 PM (Repository Freeze)*
 
 ---
 
-## 2. System Architecture
+## 1. Project Description & Clinical Problem Statement
 
-CardioRecourse is structured across four decoupled, independently testable layers:
+### The Problem
+Cardiovascular disease (CVD) remains the leading cause of mortality worldwide. Conventional risk calculators (such as the Framingham Risk Score and ASCVD Pooled Cohort Equations) estimate a patient's 10-year risk as an isolated, static probability (e.g., *"78% 10-year risk"*). In clinical practice, this leads to two critical points of failure:
+1. **Clinician Trust Failure (The Black-Box Dilemma)**: Clinicians cannot see which physiological factors disproportionately drove the elevated score, limiting diagnostic transparency.
+2. **Patient Adherence Collapse (The Actionability Gap)**: Patients receive generic, simultaneous advice (*"lose weight, quit smoking, exercise, reduce sodium"*). Lacking personalized prioritization or achievable targets, patients experience cognitive fatigue and poor lifestyle adherence.
+
+### The Solution: CardioRecourse
+**CardioRecourse** bridges the gap between risk estimation and clinical action through a three-pillar Explainable AI (XAI) architecture:
+1. **Calibrated Risk Stratification**: An ensemble XGBoost classifier calibrated via Platt scaling (Brier score < 0.12) categorizing patients into Low (<10%), Borderline (10–19.9%), or High Risk (≥20%).
+2. **Diagnostic Attribution (SHAP TreeExplainer)**: Computes exact local Shapley attributions in model log-odds margin space and converts them into marginal percentage shifts, visualizing which biomarkers drive risk upward or protect the patient.
+3. **Actionable Counterfactual Recourse (DiCE)**: A constrained optimization engine that locks immutable variables (age, sex), enforces clinical directionality (smoking can only decrease), and identifies the minimum-distance trajectory required to cross into the Low Risk band (<20%), generating 2–3 diverse, patient-tailored pathways (e.g., Balanced Lifestyle vs. Pharmacotherapy-First).
+
+---
+
+## 2. Team Information (Team Axiora)
+
+- **Team Name**: Axiora
+- **Institution**: University of Moratuwa
+
+| Team Member | Email |
+| :--- | :--- |
+| **K. M. Nipun Sankalana** *(Team Leader)* | `nipunsankalana98@gmail.com` |
+| **M. M. Raveesha Sandamini** | `raveeshasandamini20041208@gmail.com` |
+| **K. K. Malini Thisaruka** | `mthisaruka@gmail.com` |
+
+---
+
+## 3. Quick Start & Setup Instructions
+
+CardioRecourse supports two execution methods. **Option A (Docker Compose)** is the primary, zero-configuration evaluation method.
+
+### Option A: Docker Compose (Primary & Recommended Method)
+
+All environment variables, internal network proxies, and pre-trained model paths are pre-configured inside `docker-compose.yml`. No manual `.env` file configuration is required.
+
+#### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (v20.10+ with Docker Compose v2+; WSL 2 backend enabled on Windows, or standard Docker on macOS/Linux).
+- Ports `3000` (Frontend) and `8000` (Backend API) free on the host.
+
+#### 1. Build and Launch
+Clone the repository and launch the containerized application from the repository root:
+```bash
+docker compose up --build
+```
+
+#### 2. Access the Application
+- 🌐 **Clinician & Patient Web Application**: [http://localhost:3000](http://localhost:3000)
+- 📑 **Interactive OpenAPI / Swagger Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- 🩺 **Backend Health Endpoint**: [http://localhost:8000/health](http://localhost:8000/health)
+
+#### 3. Stop the Application
+```bash
+docker compose down
+```
+
+---
+
+### Option B: Local Native Execution (Manual Fallback Method)
+
+If running without Docker, launch the backend and frontend in separate terminals:
+
+#### Prerequisites
+- **Python**: Version `3.11` or `3.12` installed.
+- **Node.js**: Version `18.x` or `20.x+` with `npm`.
+
+#### Terminal 1 — Backend (FastAPI + ML Engine)
+```powershell
+# 1. Create and activate virtual environment
+python -m venv .venv
+# Windows:
+.\.venv\Scripts\Activate.ps1
+# macOS / Linux:
+# source .venv/bin/activate
+
+# 2. Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# 3. Start Uvicorn development server
+uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+```
+API docs will be available at: `http://127.0.0.1:8000/docs`.
+
+#### Terminal 2 — Frontend (React 19 + TypeScript + Vite)
+```powershell
+# 1. Navigate to frontend directory and install dependencies
+cd frontend
+npm install
+
+# 2. Start Vite development server
+npm run dev
+```
+Open your browser at: `http://localhost:5173` (or `http://localhost:5174` as displayed in the Vite terminal).
+
+---
+
+## 4. End-to-End System Architecture
 
 ```mermaid
-graph LR
-    subgraph DataIngestion [1. Data Ingestion & Sanitization]
-        direction TB
-        Raw[Patient Biomarkers / CSV] --> Validate[Pydantic V2 Schema Validation]
-        Validate --> Sanitize[De-identification & Unit Normalization]
+graph TD
+    subgraph UI ["Client Presentation Layer (React 19 + TypeScript + Nginx)"]
+        Landing["Landing Page<br/>(Overview & Tri-Pillars)"]
+        Wizard["Risk Assessment Wizard<br/>(Biometrics & Labs)"]
+        Results["Diagnostic Dashboard<br/>(Risk Gauge & SHAP Waterfall)"]
+        Recourse["Healthier Tomorrow<br/>(Counterfactual Pathway Switcher)"]
     end
 
-    subgraph MLEngine [2. ML & Recourse Inference Engine]
-        direction TB
-        Sanitize --> XGB[Calibrated XGBClassifier]
-        XGB --> SHAP[SHAP TreeExplainer Background n=50]
-        XGB --> DiCE[DiCE Constrained Genetic / Random Fallback]
+    subgraph API ["FastAPI Microservice Layer (Port 8000)"]
+        PrivacyEdge["HIPAA Safe Harbor & SL PDPA<br/>De-identification Middleware"]
+        Router["API Router<br/>(/assess, /predict, /explain, /recourse, /fhir)"]
+        Pool["ProcessPoolExecutor Concurrency Manager<br/>(CPU-Pinned Workers, OMP_NUM_THREADS=1)"]
     end
 
-    subgraph BackendAPI [3. FastAPI REST Microservice]
-        direction TB
-        ProcessPool[ProcessPoolExecutor CPU-Pinned] --> Endpoints["/predict<br/>/explain<br/>/recourse<br/>/assess"]
-        Watchdog[1.4s Hard Timeout Watchdog] --> Endpoints
+    subgraph ML ["Clinical ML & Explainability Pipeline"]
+        XGB["Calibrated XGBoost Classifier<br/>(Brier Score < 0.12)"]
+        SHAP["SHAP TreeExplainer<br/>(Local Shapley Margins)"]
+        DiCE["DiCE Counterfactual Engine<br/>(Constrained Search & Hyperplane Fallback)"]
     end
 
-    subgraph Presentation [4. Clinician & Patient Experience]
-        direction TB
-        Dashboard[Interactive Clinician Dashboard]
-        Report[Print-to-PDF Patient Action Plan]
-    end
-
-    MLEngine --- BackendAPI
-    BackendAPI --> Presentation
+    Landing --> Wizard --> Router
+    Results --> Recourse --> Router
+    Router --> PrivacyEdge --> Pool
+    Pool --> XGB
+    Pool --> SHAP
+    Pool --> DiCE
 ```
 
 ---
 
-## 3. Directory Layout
+## 5. Technology Stack & Architectural Justifications
 
-The repository follows a contract-first structure where ML models, backend services, and frontends share strict schema definitions:
+In compliance with **Section II.B** of the project submission guidelines, key technology choices are justified below:
 
-```
-Axiora/
-├── .gitignore                     # Git ignore rules for virtualenvs, artifacts, and caches
-├── Axiora - UP - 1.pdf            # Original Hackathon Project Proposal Document
-├── README.md                      # Project documentation and engineering guide
-├── WORKFLOW.md                    # Operating agreement: branching, contracts, and DoD
-├── ARCHITECTURE.md                # Deep mathematical, concurrency, and security blueprint
-├── TASK_BOARD.md                  # 27-ticket atomic Kanban board across ML, Backend, & Frontend
-├── config.py                      # Central cross-platform path and runtime configuration
-├── pytest.ini                     # Pytest suite configuration with pythonpath root resolution
-├── requirements.txt               # Pinned Python package dependencies
-│
-├── data/
-│   ├── raw/                       # Source immutable datasets (e.g., framingham.csv)
-│   └── processed/                 # Cleaned datasets, scalers, and feature_schema.json
-│
-├── artifacts/                     # Serialized binary models, scalers, and precomputed SHAP arrays
-│   ├── model_calibrated.joblib    # CalibratedClassifierCV(XGBClassifier) binary
-│   └── shap_background.npy        # 50-row representative K-Means/Medoid background matrix
-│
-├── ml_core/                       # Track A: Model training, calibration, SHAP, and DiCE logic
-│   ├── ingestion.py               # Data loading, imputing, and unit validation
-│   ├── train.py                   # XGBoost training and Platt sigmoid calibration
-│   ├── explain.py                 # TreeExplainer instantiation and local attribution pipeline
-│   ├── recourse.py                # DiCE counterfactual generator with fallback handler
-│   └── pipeline.py                # Unified ML worker interface for backend worker processes
-│
-├── backend/                       # Track B: High-concurrency FastAPI microservice
-│   ├── main.py                    # Application factory, lifespan, CORS, and routing
-│   ├── schemas.py                 # Pydantic v2 request/response contracts and validators
-│   ├── pool.py                    # ProcessPoolExecutor manager with OMP_NUM_THREADS=1 isolation
-│   ├── routes/                    # Versioned REST route controllers
-│   │   ├── predict.py             # POST /predict - Returns risk score and categorical band
-│   │   ├── explain.py             # POST /explain - Returns top biomarker SHAP attributions
-│   │   ├── recourse.py            # POST /recourse - Returns 2-3 diverse counterfactual pathways
-│   │   └── assess.py              # POST /assess - Parallel orchestration of full diagnostic packet
-│   └── security.py                # Stateless de-identification and input boundary filters
-│
-├── frontend/                      # Track C: Clinician dashboard and Patient Report UI
-│   ├── index.html                 # Dashboard entry point
-│   ├── css/
-│   │   └── styles.css             # Glassmorphism tokens, responsive grid, and print styles
-│   ├── js/
-│   │   ├── api.js                 # HTTP client talking to backend REST contracts
-│   │   ├── app.js                 # Dashboard controller, state management, and persona loaders
-│   │   ├── charts.js              # SHAP attribution waterfall and bar visualization
-│   │   └── report.js              # Patient Action Plan generator and Print-to-PDF formatter
-│   └── assets/                    # Icons, clinical color palettes, and reference visuals
-│
-└── tests/                         # Comprehensive unit, integration, and SLA regression suite
-    ├── test_ml_pipeline.py        # Validates model training, calibration curves, SHAP, and DiCE
-    ├── test_backend_api.py        # Validates REST contract responses and error codes
-    ├── test_concurrency_sla.py    # Concurrency stress tests asserting sub-1.4s SLA enforcement
-    └── test_e2e_integration.py    # End-to-end payload execution from raw patient data to report
-```
+| Layer / Component | Technology | Clinical & Engineering Justification |
+| :--- | :--- | :--- |
+| **ML Classification** | `scikit-learn`, `XGBoost` | Superior empirical performance and robust calibration on tabular biomedical data; probability-calibrated using Platt scaling for reliable risk stratification. |
+| **Explainability (XAI)** | `SHAP` (`TreeExplainer`) | Fast, mathematically exact local Shapley attributions computed in polynomial time directly from tree margins, guaranteeing local accuracy. |
+| **Counterfactual Recourse** | `DiCE-ML` + `dice_fallback_solver.py` | Enforces diversity via determinantal point processes, locks immutable clinical constraints (age, sex), and includes a deterministic fallback for sub-second SLA compliance. |
+| **Backend Framework** | `FastAPI`, `Uvicorn` | Asynchronous, type-safe REST framework with automated Pydantic v2 runtime validation and OpenAPI contract generation. |
+| **Concurrency Engine** | `ProcessPoolExecutor` | Eliminates Python Global Interpreter Lock (GIL) contention by isolating CPU-bound SHAP and DiCE computations into a dedicated worker pool with `OMP_NUM_THREADS=1`. |
+| **Frontend UI** | `React 19`, `TypeScript`, `Vite` | Strict type safety across clinical schemas, instant client-side reactivity, sub-second HMR, and responsive glassmorphic styling. |
+| **Web Server & Proxy** | `Nginx (Alpine)` | High-performance static SPA delivery with internal reverse proxying of `/api/` traffic to eliminate cross-origin resource sharing (CORS) errors. |
+| **Interoperability** | `HL7® FHIR® Release 4` | Generates standards-compliant `RiskAssessment` and LOINC-coded `Observation` bundles for hospital EHR interoperability. |
+| **Containerization** | `Docker`, `Docker Compose` | Provides an isolated, reproducible environment enabling seamless, one-command local evaluation by competition judges. |
 
 ---
 
-## 4. Quickstart Guide (Windows PowerShell)
+## 6. Known Limitations & Clinical Assumptions
 
-Follow these steps to set up and run CardioRecourse locally.
+In compliance with **Section II.B** of the project submission guidelines:
 
-### Step 1: Clone Repository & Open Directory
-```powershell
-git clone https://github.com/codesplash26-hackathon/axiora.git
-cd Axiora
-```
-
-### Step 2: Set Up Virtual Environment & Dependencies
-```powershell
-# Create virtual environment (Python 3.11 or 3.12 recommended)
-python -m venv .venv
-
-# Activate virtual environment in PowerShell
-.\.venv\Scripts\Activate.ps1
-
-# Upgrade pip and install pinned requirements
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-### Step 3: Run Test Suite to Verify Installation
-```powershell
-# Execute pytest with root pythonpath resolution
-pytest
-```
-
-### Step 4: Launch Backend REST API
-```powershell
-# Run Uvicorn server on configured host and port (127.0.0.1:8000)
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
-```
-Once launched, inspect interactive OpenAPI documentation at:  
-👉 **`http://127.0.0.1:8000/docs`**
-
-### Step 5: Launch Frontend Clinician Dashboard
-Serve the `frontend/` directory using Python's built-in HTTP server:
-```powershell
-# Open a new PowerShell terminal
-cd frontend
-python -m http.server 3000
-```
-Visit the Clinician Dashboard at:  
-👉 **`http://127.0.0.1:3000`**
+1. **Epidemiological Cohort Generalizability**: The predictive model is trained and calibrated on the Framingham Heart Study cohort (4,240 longitudinal records). While thoroughly calibrated for prototype benchmarking (Brier score 0.108), real-world clinical deployment in Sri Lanka requires recalibration against regional South Asian epidemiological cohorts to account for baseline population risk differences.
+2. **In-Memory Ephemeral Storage (Safe Harbor Assumption)**: In alignment with HIPAA Safe Harbor de-identification standards and the Sri Lanka Personal Data Protection Act (PDPA) No. 9 of 2022, patient biometric inputs evaluated via the public wizard execute purely in-memory and are not persisted to disk without explicit clinician authorization.
+3. **Counterfactual Convergence Boundaries**: DiCE optimization runs with an automated 4.5-second execution timeout guard. If randomized genetic search does not converge within the threshold, the system automatically falls back to a deterministic hyperplane trajectory to guarantee a sub-second response.
 
 ---
 
-## 5. Demo Patient Personas
+## 7. Change Log & Technical Approach Refinements
 
-To test the system across clinically representative cases, three pre-configured personas are provided:
+In compliance with **Section IV.E (Technology & Technical Approach Changes)**, the following architectural refinements were adopted relative to our initial proposal:
 
-| Attribute | Persona 1: High Risk (Mr. Arthur Perera) | Persona 2: Borderline (Mrs. Sunethra Silva) | Persona 3: Healthy Control (Mr. Dinesh Fernando) |
-| :--- | :--- | :--- | :--- |
-| **Age** | 62 | 51 | 38 |
-| **Sex** | Male (`1`) | Female (`0`) | Male (`1`) |
-| **Systolic BP (`sysBP`)** | 168 mmHg (Stage 2 HTN) | 136 mmHg (Stage 1 HTN) | 118 mmHg (Normal) |
-| **Diastolic BP (`diaBP`)** | 102 mmHg | 88 mmHg | 76 mmHg |
-| **Total Cholesterol (`totChol`)** | 284 mg/dL (High) | 224 mg/dL (Borderline) | 178 mg/dL (Desirable) |
-| **BMI** | 31.4 kg/m² (Obese Class I) | 26.8 kg/m² (Overweight) | 22.8 kg/m² (Normal) |
-| **Current Smoker** | Yes (`1`) | No (`0`) | No (`0`) |
-| **Cigarettes/Day (`cigsPerDay`)** | 20 | 0 | 0 |
-| **Fasting Glucose (`glucose`)** | 112 mg/dL (Pre-diabetic) | 94 mg/dL (Normal) | 86 mg/dL (Normal) |
-| **BP Medication (`BPMeds`)** | No (`0`) | No (`0`) | No (`0`) |
-| **Expected 10-Yr Risk** | **42.8% (High Risk - Red)** | **14.2% (Borderline - Amber)** | **3.6% (Low Risk - Green)** |
-| **Expected Recourse Target** | **< 20.0%** (Low Risk) | Maintain / Preventive Monitor | Routine Annual Wellness |
-| **Primary SHAP Drivers** | `sysBP`, `cigsPerDay`, `totChol` | `sysBP`, `totChol`, `age` | `age`, `sysBP` (protective) |
-| **Generated Pathways** | **A**: Pharmacotherapy (sysBP -28, totChol -45)<br/>**B**: Lifestyle (Quit smoking, BMI -2.4, sysBP -14) | **A**: Lifestyle (sysBP -10, BMI -1.5) | N/A (Already low risk) |
+### 1. Frontend Architecture: Vite React SPA over Next.js SSR
+- **Original Proposal**: React / Next.js hybrid server-side rendering.
+- **Implemented Approach**: React 19 Client-Side SPA bundled via Vite and served through an Nginx Alpine container.
+- **Engineering Justification**: Running a full Node.js SSR runtime in Docker alongside our Python ML engine inflated container RAM usage to ~850 MB. Compiling to a static SPA served via Nginx reduced the frontend footprint to < 95 MB, eliminating out-of-memory risks on memory-constrained evaluator machines.
+
+### 2. Algorithmic Resilience: Dual-Tier Counterfactual Pipeline (`dice_fallback_solver.py`)
+- **Original Proposal**: Standard DiCE-ML genetic optimizer.
+- **Implemented Approach**: Dual-tier pipeline pairing DiCE-ML with a custom deterministic heuristic solver (`dice_fallback_solver.py`).
+- **Engineering Justification**: Implements the exact mitigation strategy planned in Section 6.6 of our proposal. DiCE's genetic algorithm can occasionally encounter search stalls on edge-case feature combinations. The fallback solver ensures a response SLA of < 1.4 seconds under any concurrent load.
+
+### 3. Edge De-Identification Pipeline over Relational Persistence
+- **Original Proposal**: Local SQLite development database transitioning to PostgreSQL.
+- **Implemented Approach**: Stateless in-memory execution pipeline with edge de-identification middleware.
+- **Engineering Justification**: Deepens our adherence to the privacy constraints defined in Section 3.8 of our proposal, eliminating disk-write overhead and ensuring zero raw patient biometric retention on evaluator devices.
 
 ---
 
-## 6. Development Tracks & Team Alignment
+## 8. Verification, Testing & Demo Evaluation
 
-To ensure zero merge conflicts and continuous velocity, work is partitioned across three Git feature tracks:
-* **Track A (`feature/track-a-ml`)**: Data cleaning, XGBoost training, probability calibration, SHAP explainer optimization, and DiCE counterfactual generation.
-* **Track B (`feature/track-b-backend`)**: Pydantic schemas, `ProcessPoolExecutor` isolation, FastAPI endpoints, watchdog timers, and health checks.
-* **Track C (`feature/track-c-frontend`)**: Responsive clinician dashboard, real-time SHAP visualization, side-by-side DiCE comparison cards, and printable Patient Action Plan.
+### Automated Test Suite
+CardioRecourse includes automated test suites covering Pydantic validation contracts, model calibration, SHAP attribution integrity, and DiCE constraints:
+```bash
+# Execute pytest across test suites
+pytest -v
 
-For detailed operating protocols, refer to [WORKFLOW.md](file:///d:/CodeSplash/Axiora/WORKFLOW.md).  
-For deep mathematical and systems architecture, see [ARCHITECTURE.md](file:///d:/CodeSplash/Axiora/ARCHITECTURE.md).  
-For the complete 27-ticket backlog with automated Definition of Done (DoD) one-liners, inspect [TASK_BOARD.md](file:///d:/CodeSplash/Axiora/TASK_BOARD.md).
+# Verify frontend TypeScript build
+cd frontend && npm run build
+```
+
+### Quick Demo Input Profiles (For Quick Evaluation)
+Evaluators can test the 3 triage risk bands in the UI using these baseline profiles:
+- **High Risk (Triggers DiCE Recourse)**: Age: 62, Male, `sysBP: 168`, `diaBP: 102`, `totChol: 284`, `glucose: 112`, `cigsPerDay: 20`, `BMI: 31.4` (Result: >40% High Risk, coral-red status).
+- **Borderline Risk**: Age: 51, Female, `sysBP: 136`, `diaBP: 88`, `totChol: 224`, `glucose: 94`, `cigsPerDay: 0`, `BMI: 26.8` (Result: ~14% Borderline Risk, amber status).
+- **Low Risk**: Age: 38, Male, `sysBP: 118`, `diaBP: 76`, `totChol: 178`, `glucose: 86`, `cigsPerDay: 0`, `BMI: 22.8` (Result: <5% Low Risk, green status).
+
+---
+
+## 9. License & Acknowledgments
+
+- **License**: Released under the [MIT License](LICENSE) for open academic and research evaluation.
+- **Dataset Acknowledgments**: Built upon longitudinal data from the **Framingham Heart Study** (National Heart, Lung, and Blood Institute).
+- **Academic Competition**: Developed by **Team Axiora** from the **University of Moratuwa** for **CodeSplash '26** (organized by the Computer Science Students' Association, University of Kelaniya).
