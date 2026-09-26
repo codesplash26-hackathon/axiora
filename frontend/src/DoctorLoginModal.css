@@ -9,6 +9,7 @@
   align-items: center;
   z-index: 9999;
   padding: 1rem;
+  overflow-y: auto;
 }
 
 .auth-modal {
@@ -17,11 +18,32 @@
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 1.5rem;
-  padding: 2.5rem;
+  padding: 2.5rem 2.5rem 2rem 2.5rem;
   width: 100%;
   max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 40px rgba(56, 189, 248, 0.15);
   position: relative;
+  margin: auto;
+}
+
+.auth-modal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.auth-modal::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.5);
+  border-radius: 9999px;
+}
+
+.auth-modal::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.auth-modal::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .auth-close {
@@ -34,6 +56,7 @@
   cursor: pointer;
   transition: color 0.2s;
   padding: 0.25rem;
+  z-index: 10;
 }
 
 .auth-close:hover {
@@ -188,3 +211,45 @@
 .demo-icon {
   color: #f59e0b;
 }
+
+.auth-tabs {
+  display: flex;
+  background: #f1f5f9;
+  border-radius: 0.75rem;
+  padding: 0.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.auth-tab-btn {
+  flex: 1;
+  padding: 0.6rem;
+  border: none;
+  background: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.auth-tab-btn.active {
+  background: white;
+  color: #0284c7;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.auth-error-msg {
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #b91c1c;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+

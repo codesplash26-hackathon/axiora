@@ -64,9 +64,9 @@ def create_patient(doctor_id: str, patient_data: Dict[str, Any]) -> Dict[str, An
         "sex": str(patient_data.get("sex", "Female")),
         "contactPhone": str(patient_data.get("contactPhone", "")),
         "baselineBiomarkers": dict(patient_data.get("baselineBiomarkers", {})),
-        "latestRiskScore": float(patient_data.get("latestRiskScore", 0.0)),
-        "latestRiskPercentage": float(patient_data.get("latestRiskPercentage", 0.0)),
-        "latestRiskBand": str(patient_data.get("latestRiskBand", "Pending")),
+        "latestRiskScore": patient_data.get("latestRiskScore", None),
+        "latestRiskPercentage": patient_data.get("latestRiskPercentage", None),
+        "latestRiskBand": str(patient_data.get("latestRiskBand", "Not Assessed")),
         "createdAt": _utc_now_iso(),
         "updatedAt": _utc_now_iso(),
     }
@@ -155,6 +155,7 @@ def save_assessment(patient_id: str, assessment_data: Dict[str, Any]) -> Dict[st
         "latestRiskScore": record["riskScore"],
         "latestRiskPercentage": record["riskPercentage"],
         "latestRiskBand": record["riskBand"],
+        "baselineBiomarkers": record["inputBiomarkers"],
         "updatedAt": record["assessedAt"],
     })
     return record
@@ -210,10 +211,16 @@ def get_doctor_overview(doctor_id: str) -> Dict[str, Any]:
     high_risk = sum(1 for p in patients if p.get("latestRiskBand", "").lower() == "high")
     borderline = sum(1 for p in patients if p.get("latestRiskBand", "").lower() == "borderline")
     low_risk = sum(1 for p in patients if p.get("latestRiskBand", "").lower() == "low")
+    not_assessed = sum(
+        1 for p in patients
+        if p.get("latestRiskBand", "").lower() in ("not assessed", "pending")
+        or p.get("latestRiskScore") is None
+    )
 
     return {
         "totalPatients": total,
         "highRiskCount": high_risk,
         "borderlineCount": borderline,
         "lowRiskCount": low_risk,
+        "notAssessedCount": not_assessed,
     }

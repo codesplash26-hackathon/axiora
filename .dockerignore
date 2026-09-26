@@ -1,0 +1,16 @@
+.git
+.gitignore
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+tests/
+docs/
+*.pdf
+CONFIG_AUDIT.md
+
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/

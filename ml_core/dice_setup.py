@@ -104,7 +104,8 @@ def get_permitted_range(patient_dict: Optional[Dict[str, Any]] = None) -> Dict[s
     """
     Returns feature ranges. If a patient is provided (or set in context),
     it dynamically clamps the upper bound of risk features to the patient's current value.
-    Prevents DiCE from ever suggesting worsening biomarkers.
+    Prevents DiCE from ever suggesting worsening biomarkers. Passing patient_dict directly
+    guarantees thread safety under concurrent multi-tenant requests.
     """
     target_patient = patient_dict if patient_dict is not None else _active_patient_context
     schema = load_schema()
@@ -113,7 +114,7 @@ def get_permitted_range(patient_dict: Optional[Dict[str, Any]] = None) -> Dict[s
     feature_types = schema.get("feature_types", {})
 
     p_range = {}
-    unidirectional_harmful = ["sysBP", "diaBP", "totChol", "BMI", "glucose", "cigsPerDay"]
+    unidirectional_harmful = ["sysBP", "diaBP", "totChol", "BMI", "glucose", "cigsPerDay", "heartRate"]
 
     for feat in actionable:
         b = boundaries[feat]
@@ -202,28 +203,4 @@ def format_query_instance(patient_dict: Dict[str, Any]) -> pd.DataFrame:
             row[col] = int(patient_dict[col])
         else:
             row[col] = float(patient_dict[col])
-    return pd.DataFrame([row], columns=CANONICAL_FEATURES)
-
-"""
-Root-level gateway for DiCE setup module.
-Exposes all components from ml_core.dice_setup.
-"""
-from ml_core.dice_setup import (
-    SafeModelWrapper,
-    CANONICAL_FEATURES,
-    load_schema,
-    get_actionable_features,
-    get_permitted_range,
-    set_active_patient_context,
-    set_model_recourse_threshold,
-    init_dice_framework,
-    get_dice_data,
-    get_dice_model,
-    get_genetic_explainer,
-    format_query_instance,
-)
-
-if __name__ == "__main__":
-    print("Testing root dice_setup gateway...")
-    d, m, exp = init_dice_framework()
-    print("Root dice_setup operational.")
+    return pd.DataFrame([row], columns=CANONICAL_FEATURES)

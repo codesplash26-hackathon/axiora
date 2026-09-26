@@ -11,6 +11,9 @@ from backend.privacy_rules import (
 logger = logging.getLogger("cardiorecourse.privacy")
 
 
+MAX_BODY_BYTES = 2 * 1024 * 1024  # 2 MB maximum body size limit
+
+
 class PrivacySanitizationMiddleware:
     """
     Stateless Edge De-Identification ASGI Middleware.
@@ -49,12 +52,34 @@ class PrivacySanitizationMiddleware:
         scope["state"]["is_deidentified"] = True
         scope["state"]["purged_phi_keys"] = []
 
-        # 3. Payload Body De-Identification
+        # 3. Payload Body De-Identification with 2MB DoS Guard
         body_chunks = []
         more_body = True
+        total_bytes = 0
         while more_body:
             message = await receive()
-            body_chunks.append(message.get("body", b""))
+            chunk = message.get("body", b"")
+            total_bytes += len(chunk)
+            if total_bytes > MAX_BODY_BYTES:
+                logger.warning(
+                    f"[PrivacySanitizer] Inbound payload exceeded {MAX_BODY_BYTES} bytes limit ({total_bytes} bytes). Rejecting with 413."
+                )
+                await send({
+                    "type": "http.response.start",
+                    "status": 413,
+                    "headers": [
+                        (b"content-type", b"application/json"),
+                        (b"x-privacy-policy", b"HIPAA-SafeHarbor,SriLanka-PDPA-2022"),
+                    ],
+                })
+                await send({
+                    "type": "http.response.body",
+                    "body": b'{"detail": "Payload Too Large: Maximum allowed request body is 2MB."}',
+                    "more_body": False,
+                })
+                return
+
+            body_chunks.append(chunk)
             more_body = message.get("more_body", False)
 
         raw_body = b"".join(body_chunks)
@@ -74,9 +99,27 @@ class PrivacySanitizationMiddleware:
                             f"[PrivacySanitizer] Purged {len(purged_keys)} direct PHI identifiers: {purged_keys}"
                         )
                     sanitized_body = json.dumps(sanitized_payload).encode("utf-8")
+                else:
+                    sanitized_body = raw_body
 
-            except Exception:
-                sanitized_body = raw_body
+            except Exception as exc:
+                # Fail-closed security: reject malformed or non-JSON payloads with 400 Bad Request
+                # prevents raw un-sanitized PHI payloads from leaking downstream
+                logger.warning(f"[PrivacySanitizer] Malformed non-JSON payload rejected: {str(exc)}")
+                await send({
+                    "type": "http.response.start",
+                    "status": 400,
+                    "headers": [
+                        (b"content-type", b"application/json"),
+                        (b"x-privacy-policy", b"HIPAA-SafeHarbor,SriLanka-PDPA-2022"),
+                    ],
+                })
+                await send({
+                    "type": "http.response.body",
+                    "body": b'{"detail": "Bad Request: Malformed JSON payload cannot be safely sanitized."}',
+                    "more_body": False,
+                })
+                return
 
         # 4. Construct Sanitized In-Memory Stream Receive Callable
         stream_sent = False

@@ -1,0 +1,305 @@
+{
+  "doctors": {
+    "38132fae-b026-40f0-becc-6ef58532fbeb": {
+      "doctorId": "38132fae-b026-40f0-becc-6ef58532fbeb",
+      "email": "doctor.test@axiora.lk",
+      "fullName": "Dr. Sarah Perera",
+      "specialization": "Cardiology",
+      "hospital": "Teaching Hospital Colombo",
+      "passwordHash": "hashed_pw_xyz",
+      "createdAt": "2026-09-26T11:56:50.781519+00:00"
+    },
+    "b0bab7c3-b0a9-43ab-9f01-7da5a69a303a": {
+      "doctorId": "b0bab7c3-b0a9-43ab-9f01-7da5a69a303a",
+      "email": "dr.portal.test@axiora.lk",
+      "fullName": "Dr. Nishantha Silva",
+      "specialization": "Cardiology",
+      "hospital": "Karapitiya National Hospital",
+      "passwordHash": "$2b$12$.hEXYMvkyFUKNt.lwFsDh.sGbjsdN3MXjFaJe1.XOrQOtcLIo0axG",
+      "createdAt": "2026-09-26T11:57:00.276041+00:00"
+    }
+  },
+  "patients": {
+    "PID-001": {
+      "patientId": "PID-001",
+      "doctorId": "b0bab7c3-b0a9-43ab-9f01-7da5a69a303a",
+      "fullName": "Dinesh Gunawardena",
+      "age": 55,
+      "sex": "Male",
+      "contactPhone": "+94779998888",
+      "baselineBiomarkers": {
+        "male": 1,
+        "age": 55.0,
+        "currentSmoker": 1,
+        "cigsPerDay": 20.0,
+        "BPMeds": 0.0,
+        "prevalentStroke": 0,
+        "prevalentHyp": 1,
+        "diabetes": 0,
+        "totChol": 250.0,
+        "sysBP": 150.0,
+        "diaBP": 95.0,
+        "BMI": 28.5,
+        "heartRate": 76.0,
+        "glucose": 88.0
+      },
+      "latestRiskScore": 0.3024,
+      "latestRiskPercentage": 30.24,
+      "latestRiskBand": "High",
+      "createdAt": "2026-09-26T11:57:00.310397+00:00",
+      "updatedAt": "2026-09-26T11:57:00.932442+00:00",
+      "_subcollections": {
+        "assessments": {
+          "1260eb3e-35d8-478e-8e11-a52edb057f45": {
+            "assessmentId": "1260eb3e-35d8-478e-8e11-a52edb057f45",
+            "patientId": "PID-001",
+            "assessedAt": "2026-09-26T11:57:00.894213+00:00",
+            "inputBiomarkers": {
+              "male": 1,
+              "age": 55.0,
+              "currentSmoker": 1,
+              "cigsPerDay": 20.0,
+              "BPMeds": 0.0,
+              "prevalentStroke": 0,
+              "prevalentHyp": 1,
+              "diabetes": 0,
+              "totChol": 250.0,
+              "sysBP": 150.0,
+              "diaBP": 95.0,
+              "BMI": 28.5,
+              "heartRate": 76.0,
+              "glucose": 88.0
+            },
+            "riskScore": 0.3024,
+            "riskPercentage": 30.24,
+            "riskBand": "High",
+            "shapAttributions": [
+              {
+                "feature": "cigsPerDay",
+                "display_name": "Cigarettes Per Day",
+                "attribution_value": 0.3831,
+                "patient_value": 20.0,
+                "direction": "risk_increasing",
+                "marginal_percentage_impact": 8.1
+              },
+              {
+                "feature": "age",
+                "display_name": "Age",
+                "attribution_value": 0.2807,
+                "patient_value": 55.0,
+                "direction": "risk_increasing",
+                "marginal_percentage_impact": 5.82
+              },
+              {
+                "feature": "male",
+                "display_name": "Biological Sex",
+                "attribution_value": 0.2373,
+                "patient_value": 1.0,
+                "direction": "risk_increasing",
+                "marginal_percentage_impact": 4.88
+              },
+              {
+                "feature": "sysBP",
+                "display_name": "Systolic Blood Pressure",
+                "attribution_value": 0.2023,
+                "patient_value": 150.0,
+                "direction": "risk_increasing",
+                "marginal_percentage_impact": 4.13
+              },
+              {
+                "feature": "BMI",
+                "display_name": "Body Mass Index",
+                "attribution_value": 0.1003,
+                "patient_value": 28.5,
+                "direction": "risk_increasing",
+                "marginal_percentage_impact": 2.0
+              },
+              {
+                "feature": "totChol",
+                "display_name": "Total Serum Cholesterol",
+                "attribution_value": -0.0962,
+                "patient_value": 250.0,
+                "direction": "protective",
+                "marginal_percentage_impact": -1.83
+              },
+              {
+                "feature": "diaBP",
+                "display_name": "Diastolic Blood Pressure",
+                "attribution_value": 0.0698,
+                "patient_value": 95.0,
+                "direction": "risk_increasing",
+                "marginal_percentage_impact": 1.38
+              },
+              {
+                "feature": "prevalentHyp",
+                "display_name": "Prevalent Hypertension",
+                "attribution_value": 0.0285,
+                "patient_value": 1.0,
+                "direction": "risk_increasing",
+                "marginal_percentage_impact": 0.56
+              },
+              {
+                "feature": "glucose",
+                "display_name": "Fasting Blood Glucose",
+                "attribution_value": -0.0241,
+                "patient_value": 88.0,
+                "direction": "protective",
+                "marginal_percentage_impact": -0.47
+              },
+              {
+                "feature": "currentSmoker",
+                "display_name": "Current Smoking Status",
+                "attribution_value": -0.0117,
+                "patient_value": 1.0,
+                "direction": "protective",
+                "marginal_percentage_impact": -0.23
+              },
+              {
+                "feature": "heartRate",
+                "display_name": "Heart Rate",
+                "attribution_value": 0.0055,
+                "patient_value": 76.0,
+                "direction": "risk_increasing",
+                "marginal_percentage_impact": 0.11
+              },
+              {
+                "feature": "BPMeds",
+                "display_name": "Blood Pressure Medication",
+                "attribution_value": -0.0039,
+                "patient_value": 0.0,
+                "direction": "protective",
+                "marginal_percentage_impact": -0.08
+              },
+              {
+                "feature": "diabetes",
+                "display_name": "Diabetes Diagnosis",
+                "attribution_value": 0.0012,
+                "patient_value": 0.0,
+                "direction": "risk_increasing",
+                "marginal_percentage_impact": 0.02
+              },
+              {
+                "feature": "prevalentStroke",
+                "display_name": "History of Stroke",
+                "attribution_value": 0.0,
+                "patient_value": 0.0,
+                "direction": "protective",
+                "marginal_percentage_impact": 0.0
+              }
+            ],
+            "pipelineLatencyMs": 518.9
+          }
+        },
+        "actionPlans": {
+          "1ccf514f-56f6-4870-ac32-1a43d934128e": {
+            "planId": "1ccf514f-56f6-4870-ac32-1a43d934128e",
+            "patientId": "PID-001",
+            "assessmentId": "1260eb3e-35d8-478e-8e11-a52edb057f45",
+            "createdAt": "2026-09-26T11:57:00.932442+00:00",
+            "selectedPathwayTitle": "Pathway 1 \u2014 Lifestyle Led Reduction",
+            "projectedRiskPercentage": 19.1,
+            "absoluteRiskReduction": 7.3,
+            "targetBiomarkers": {
+              "sysBP": 135,
+              "BMI": 26.0
+            },
+            "recommendedChanges": [
+              {
+                "feature": "sysBP",
+                "delta": -15,
+                "unit": "mmHg",
+                "baseline": 150,
+                "target": 135
+              }
+            ],
+            "clinicianNotes": "Prescribed DASH diet, low-sodium protocol, 30 min daily aerobic exercise.",
+            "doctorConfirmed": true
+          }
+        }
+      }
+    },
+    "PID-002": {
+      "patientId": "PID-002",
+      "doctorId": "doc_test_123",
+      "fullName": "Kamal Fernando",
+      "age": 48,
+      "sex": "Male",
+      "contactPhone": "",
+      "baselineBiomarkers": {},
+      "latestRiskScore": 0.145,
+      "latestRiskPercentage": 14.5,
+      "latestRiskBand": "Borderline",
+      "createdAt": "2026-09-26T11:56:50.789070+00:00",
+      "updatedAt": "2026-09-26T11:56:50.789070+00:00"
+    },
+    "PID-003": {
+      "patientId": "PID-003",
+      "doctorId": "doc_test_123",
+      "fullName": "Sunil De Silva",
+      "age": 35,
+      "sex": "Male",
+      "contactPhone": "",
+      "baselineBiomarkers": {},
+      "latestRiskScore": 0.052,
+      "latestRiskPercentage": 5.2,
+      "latestRiskBand": "Low",
+      "createdAt": "2026-09-26T11:56:50.792937+00:00",
+      "updatedAt": "2026-09-26T11:56:50.792937+00:00"
+    },
+    "PID-SUBCOL-TEST": {
+      "patientId": "PID-SUBCOL-TEST",
+      "doctorId": "doc_test_subcol",
+      "fullName": "Rohan Wickrama",
+      "age": 60,
+      "sex": "Male",
+      "contactPhone": "",
+      "baselineBiomarkers": {
+        "sysBP": 155,
+        "totChol": 245
+      },
+      "latestRiskScore": 0.285,
+      "latestRiskPercentage": 28.5,
+      "latestRiskBand": "High",
+      "createdAt": "2026-09-26T11:56:50.801845+00:00",
+      "updatedAt": "2026-09-26T11:56:50.811919+00:00",
+      "_subcollections": {
+        "assessments": {
+          "0959625b-eb48-4304-8ba2-6fd3f444bd91": {
+            "assessmentId": "0959625b-eb48-4304-8ba2-6fd3f444bd91",
+            "patientId": "PID-SUBCOL-TEST",
+            "assessedAt": "2026-09-26T11:56:50.805675+00:00",
+            "inputBiomarkers": {
+              "sysBP": 155,
+              "totChol": 245
+            },
+            "riskScore": 0.285,
+            "riskPercentage": 28.5,
+            "riskBand": "High",
+            "shapAttributions": [
+              {
+                "feature": "sysBP",
+                "attribution": 0.15
+              }
+            ],
+            "pipelineLatencyMs": 145.2
+          }
+        },
+        "actionPlans": {
+          "bc0deff2-88f1-4f2c-8fbe-5fa669d76206": {
+            "planId": "bc0deff2-88f1-4f2c-8fbe-5fa669d76206",
+            "patientId": "PID-SUBCOL-TEST",
+            "assessmentId": "0959625b-eb48-4304-8ba2-6fd3f444bd91",
+            "createdAt": "2026-09-26T11:56:50.811919+00:00",
+            "selectedPathwayTitle": "Lifestyle Optimization",
+            "projectedRiskPercentage": 19.2,
+            "absoluteRiskReduction": 9.3,
+            "targetBiomarkers": {},
+            "recommendedChanges": [],
+            "clinicianNotes": "Reduce salt intake and take 30 min brisk walks daily",
+            "doctorConfirmed": true
+          }
+        }
+      }
+    }
+  }
+}

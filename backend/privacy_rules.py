@@ -63,6 +63,28 @@ def contains_phi_value(value: Any) -> bool:
     return False
 
 
+def _sanitize_list(items: List[Any], parent_key: str) -> Tuple[List[Any], List[str]]:
+    """Recursively inspect and purge PHI values or sub-dictionaries from arrays."""
+    clean_items = []
+    purged = []
+    for idx, item in enumerate(items):
+        item_path = f"{parent_key}[{idx}]"
+        if contains_phi_value(item):
+            purged.append(item_path)
+            continue
+        if isinstance(item, dict):
+            sub_clean, sub_purged = sanitize_patient_payload(item)
+            clean_items.append(sub_clean)
+            purged.extend([f"{item_path}.{sk}" for sk in sub_purged])
+        elif isinstance(item, list):
+            sub_clean, sub_purged = _sanitize_list(item, item_path)
+            clean_items.append(sub_clean)
+            purged.extend(sub_purged)
+        else:
+            clean_items.append(item)
+    return clean_items, purged
+
+
 def sanitize_patient_payload(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], List[str]]:
     """
     Purge all direct text identifiers and PHI metadata from incoming payload.
@@ -89,7 +111,12 @@ def sanitize_patient_payload(payload: Dict[str, Any]) -> Tuple[Dict[str, Any], L
             sub_sanitized, sub_purged = sanitize_patient_payload(v)
             sanitized[k] = sub_sanitized
             purged_keys.extend([f"{k}.{sk}" for sk in sub_purged])
+        elif isinstance(v, list):
+            clean_list, sub_purged = _sanitize_list(v, k)
+            sanitized[k] = clean_list
+            purged_keys.extend(sub_purged)
         else:
             sanitized[k] = v
 
     return sanitized, purged_keys
+

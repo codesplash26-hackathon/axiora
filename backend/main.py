@@ -8,6 +8,7 @@ import config
 from backend.api_routes import router
 from backend.auth.auth_routes import router as auth_router
 from backend.portal.doctor_routes import router as doctor_router
+from backend.fhir.fhir_routes import router as fhir_router
 from backend.pool import init_pool, shutdown_pool
 from backend.privacy_middleware import PrivacySanitizationMiddleware
 
@@ -28,12 +29,20 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+import os
+
+raw_origins = os.getenv("ALLOWED_ORIGINS", "")
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
+if raw_origins:
+    origins.extend([o.strip() for o in raw_origins.split(",") if o.strip()])
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -62,8 +71,11 @@ async def audit_correlation_and_timing_middleware(request: Request, call_next):
 app.include_router(router)
 app.include_router(auth_router)
 app.include_router(doctor_router)
+app.include_router(fhir_router)
+app.include_router(router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(doctor_router, prefix="/api")
+app.include_router(fhir_router, prefix="/api")
 
 
 @app.get("/health", tags=["System"])

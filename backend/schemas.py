@@ -14,8 +14,8 @@ class PatientInputSchema(BaseModel):
     prevalentHyp: int = Field(default=0, ge=0, le=1, description="History of hypertension: 1 or 0")
     diabetes: int = Field(default=0, ge=0, le=1, description="Diagnosed diabetic: 1 or 0")
     totChol: float = Field(..., ge=100.0, le=600.0, description="Total serum cholesterol in mg/dL")
-    sysBP: float = Field(..., ge=95.0, le=295.0, description="Systolic blood pressure in mmHg")
-    diaBP: float = Field(..., ge=50.0, le=160.0, description="Diastolic blood pressure in mmHg")
+    sysBP: float = Field(..., ge=70.0, le=295.0, description="Systolic blood pressure in mmHg")
+    diaBP: float = Field(..., ge=40.0, le=160.0, description="Diastolic blood pressure in mmHg")
     BMI: float = Field(..., ge=15.0, le=55.0, description="Body Mass Index in kg/m^2")
     heartRate: float = Field(..., ge=40.0, le=180.0, description="Resting heart rate in beats per minute")
     glucose: float = Field(..., ge=40.0, le=400.0, description="Fasting blood glucose level in mg/dL")
@@ -45,15 +45,19 @@ class PredictionResponse(BaseModel):
 class FeatureAttribution(BaseModel):
     feature: str = Field(..., description="Raw column name (e.g., sysBP)")
     display_name: str = Field(..., description="Plain-language clinical label")
-    attribution_value: float = Field(..., description="SHAP attribution value (positive or negative)")
+    attribution_value: float = Field(..., description="SHAP attribution value (positive or negative log-odds)")
     patient_value: float = Field(..., description="Patient baseline value for this feature")
     direction: Literal["risk_increasing", "protective"] = Field(..., description="Impact direction on risk")
+    marginal_percentage_impact: Optional[float] = Field(None, description="Estimated percentage point risk shift")
 
 
 class ExplanationResponse(BaseModel):
     base_value: float = Field(..., description="Population baseline expected risk")
     risk_score: float = Field(..., ge=0.0, le=1.0, description="Individual calibrated risk score")
     attributions: List[FeatureAttribution] = Field(..., description="Ranked feature attributions")
+    base_log_odds: Optional[float] = Field(None, description="Expected model log-odds margin baseline")
+    patient_log_odds: Optional[float] = Field(None, description="Total patient log-odds margin score")
+
 
 
 # ==========================================

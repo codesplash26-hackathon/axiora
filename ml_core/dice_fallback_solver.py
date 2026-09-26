@@ -47,7 +47,9 @@ def _vectorized_random_solver(
     query_df: pd.DataFrame,
     total_CFs: int = 3,
     sample_size: int = 500,
-    desired_class: int = 0
+    desired_class: int = 0,
+    permitted_range: Optional[Dict[str, List[Any]]] = None,
+    patient_dict: Optional[Dict[str, Any]] = None,
 ) -> pd.DataFrame:
     """
     Direct model vectorization random sampling counterfactual solver.
@@ -58,7 +60,13 @@ def _vectorized_random_solver(
     init_fallback_solver()
     schema = load_schema()
     actionable = get_actionable_features()
-    p_range = get_permitted_range()
+    if permitted_range is not None:
+        p_range = permitted_range
+    else:
+        target_dict = patient_dict
+        if target_dict is None and isinstance(query_df, pd.DataFrame) and not query_df.empty:
+            target_dict = query_df.iloc[0].to_dict()
+        p_range = get_permitted_range(target_dict)
     feature_types = schema.get("feature_types", {})
     boundaries = schema.get("actionable_boundaries", {})
 
@@ -125,17 +133,33 @@ def _vectorized_random_solver(
         # Fallback to lowest risk candidates if strict threshold not reached
         best_indices = np.argsort(probs)[:total_CFs]
     else:
-        # Distance-weighted selection: prioritize candidates with minimum number of changes
+        # Clinical Effort / Actionability Cost Weights:
+        # Reflects physiological and behavioral difficulty of adherence
+        ACTIONABILITY_COST_WEIGHTS = {
+            "BPMeds": 1.0,      # High adherence feasibility with medical prescription
+            "totChol": 1.5,     # Manageable via statin therapy
+            "sysBP": 2.0,       # Dietary sodium reduction + antihypertensives
+            "diaBP": 2.0,       # Hemodynamic stabilization
+            "heartRate": 2.5,   # Aerobic conditioning
+            "glucose": 3.0,     # Dietary glycemic control
+            "cigsPerDay": 3.5,  # Behavioral addiction barrier
+            "currentSmoker": 3.5,
+            "BMI": 5.0,         # High physical friction; sustainable weight loss takes months
+        }
+
+        # Distance-weighted selection: prioritize candidates with minimum clinical cost
         valid_indices = np.where(valid_mask)[0]
-        # Compute L1 distance normalized by feature range
+        # Compute cost-weighted L1 distance normalized by feature range
         diffs = np.abs(mat[valid_indices] - base_vals)
         for j, c in enumerate(cols):
             if c in actionable:
                 rng = max(1.0, float(boundaries[c]["max"]) - float(boundaries[c]["min"]))
-                diffs[:, j] /= rng
+                weight = ACTIONABILITY_COST_WEIGHTS.get(c, 1.0)
+                diffs[:, j] = (diffs[:, j] / rng) * weight
             else:
                 diffs[:, j] = 0.0
         distances = np.sum(diffs, axis=1)
+
 
         # Diverse selection: pick top candidates across different distances
         sorted_pos = np.argsort(distances)
@@ -205,7 +229,9 @@ def search_recourse_with_fallback(
     desired_class: int = 0,
     max_timer_ms: float = 950.0,
     genetic_maxiterations: Optional[int] = None,
-    sample_size: int = 500
+    sample_size: int = 500,
+    patient_dict: Optional[Dict[str, Any]] = None,
+    permitted_range: Optional[Dict[str, List[Any]]] = None,
 ) -> Dict[str, Any]:
     """
     Generate diverse recourse counterfactuals with automatic high-speed fallback.
@@ -223,11 +249,14 @@ def search_recourse_with_fallback(
 
     if isinstance(query_instance, dict):
         query_df = format_query_instance(query_instance)
+        effective_patient = query_instance if patient_dict is None else patient_dict
     else:
         query_df = query_instance.copy()
+        effective_patient = query_df.iloc[0].to_dict() if patient_dict is None else patient_dict
 
     actionable_features = get_actionable_features()
-    permitted_range = get_permitted_range()
+    if permitted_range is None:
+        permitted_range = get_permitted_range(effective_patient)
 
     fallback_triggered = False
     fallback_reason = None
@@ -243,7 +272,12 @@ def search_recourse_with_fallback(
         fallback_reason = f"Genetic iterations artificially restricted to {genetic_maxiterations}; triggered non-convergence fallback."
         method_used = "random"
         cfs_df = _vectorized_random_solver(
-            query_df, total_CFs=total_CFs, sample_size=sample_size, desired_class=desired_class
+            query_df,
+            total_CFs=total_CFs,
+            sample_size=sample_size,
+            desired_class=desired_class,
+            permitted_range=permitted_range,
+            patient_dict=effective_patient,
         )
     else:
         timeout_sec = max_timer_ms / 1000.0
@@ -266,7 +300,12 @@ def search_recourse_with_fallback(
                 fallback_reason = "Genetic search produced empty or non-flipping counterfactuals."
                 method_used = "random"
                 cfs_df = _vectorized_random_solver(
-                    query_df, total_CFs=total_CFs, sample_size=sample_size, desired_class=desired_class
+                    query_df,
+                    total_CFs=total_CFs,
+                    sample_size=sample_size,
+                    desired_class=desired_class,
+                    permitted_range=permitted_range,
+                    patient_dict=effective_patient,
                 )
 
         except (concurrent.futures.TimeoutError, TimeoutError):
@@ -274,14 +313,24 @@ def search_recourse_with_fallback(
             fallback_reason = f"Genetic optimizer exceeded {max_timer_ms}ms timer; executed immediate random search fallback."
             method_used = "random"
             cfs_df = _vectorized_random_solver(
-                query_df, total_CFs=total_CFs, sample_size=sample_size, desired_class=desired_class
+                query_df,
+                total_CFs=total_CFs,
+                sample_size=sample_size,
+                desired_class=desired_class,
+                permitted_range=permitted_range,
+                patient_dict=effective_patient,
             )
         except Exception as exc:
             fallback_triggered = True
             fallback_reason = f"Genetic optimizer encountered error: {str(exc)}; executed random search fallback."
             method_used = "random"
             cfs_df = _vectorized_random_solver(
-                query_df, total_CFs=total_CFs, sample_size=sample_size, desired_class=desired_class
+                query_df,
+                total_CFs=total_CFs,
+                sample_size=sample_size,
+                desired_class=desired_class,
+                permitted_range=permitted_range,
+                patient_dict=effective_patient,
             )
 
     elapsed_ms = (time.perf_counter() - t_start) * 1000.0
