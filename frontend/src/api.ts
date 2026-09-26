@@ -162,6 +162,14 @@ export interface CreatePatientPayload {
   baselineBiomarkers?: Partial<PatientInput>;
 }
 
+export interface UpdatePatientPayload {
+  fullName?: string;
+  age?: number;
+  sex?: string;
+  contactPhone?: string;
+  baselineBiomarkers?: Partial<PatientInput>;
+}
+
 export interface PatientAssessmentRecord {
   assessmentId: string;
   patientId: string;
@@ -293,6 +301,26 @@ export async function createPatient(
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ detail: 'Failed to create patient' }));
     throw new Error(errorData.detail || 'Failed to create patient');
+  }
+  return response.json();
+}
+
+export async function updatePatient(
+  token: string,
+  patientId: string,
+  payload: UpdatePatientPayload
+): Promise<PatientRecord> {
+  const response = await fetch(`/api/doctor/patients/${patientId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ detail: 'Failed to update patient record' }));
+    throw new Error(errorData.detail || 'Failed to update patient record');
   }
   return response.json();
 }
