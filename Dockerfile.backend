@@ -21,6 +21,7 @@ RUN pip install --no-cache-dir --default-timeout=1000 --retries 10 -r requiremen
 
 # Copy root scripts and modules
 COPY config.py ml_engine.py dice_setup.py dice_fallback_solver.py privacy_middleware.py ./
+COPY serviceAccountKey.json* ./
 
 # Copy core application directories
 COPY backend/ ./backend/
