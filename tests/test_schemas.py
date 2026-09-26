@@ -41,6 +41,18 @@ def test_sysbp_out_of_bounds_fails(valid_patient_payload):
     with pytest.raises(ValidationError):
         PatientInputSchema(**payload)
 
+def test_young_patient_low_bp_valid(valid_patient_payload):
+    payload = valid_patient_payload.copy()
+    payload["age"] = 21
+    payload["sysBP"] = 86.0
+    payload["diaBP"] = 56.0
+    payload["BMI"] = 18.5
+    payload["heartRate"] = 96.0
+    patient = PatientInputSchema(**payload)
+    assert patient.sysBP == 86.0
+    assert patient.diaBP == 56.0
+    assert patient.age == 21
+
 def test_smoking_coherence_non_smoker_with_cigarettes(valid_patient_payload):
     payload = valid_patient_payload.copy()
     payload["currentSmoker"] = 0
