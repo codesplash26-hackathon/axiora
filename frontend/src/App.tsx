@@ -27,8 +27,8 @@ const App = () => {
   useEffect(() => {
     setMounted(true);
     try {
-      const savedDoc = sessionStorage.getItem('cardiorecourse_doctor');
-      const savedToken = sessionStorage.getItem('cardiorecourse_token');
+      const savedDoc = localStorage.getItem('cardiorecourse_doctor') || sessionStorage.getItem('cardiorecourse_doctor');
+      const savedToken = localStorage.getItem('cardiorecourse_token') || sessionStorage.getItem('cardiorecourse_token');
       if (savedDoc && savedToken) {
         setDoctorUser(JSON.parse(savedDoc));
         setDoctorToken(savedToken);
@@ -90,6 +90,8 @@ const App = () => {
     setDoctorUser(null);
     setDoctorToken(null);
     setAssessingPatient(null);
+    localStorage.removeItem('cardiorecourse_doctor');
+    localStorage.removeItem('cardiorecourse_token');
     sessionStorage.removeItem('cardiorecourse_doctor');
     sessionStorage.removeItem('cardiorecourse_token');
     setCurrentPage('landing');
@@ -183,6 +185,8 @@ const App = () => {
         onLogin={(doc, token) => {
           setDoctorUser(doc);
           setDoctorToken(token);
+          localStorage.setItem('cardiorecourse_doctor', JSON.stringify(doc));
+          localStorage.setItem('cardiorecourse_token', token);
           sessionStorage.setItem('cardiorecourse_doctor', JSON.stringify(doc));
           sessionStorage.setItem('cardiorecourse_token', token);
           setCurrentPage('doctor-dashboard');
