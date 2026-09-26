@@ -37,7 +37,7 @@ export default function ExplanationPage({ explanation, onBack, onNext }: Explana
         <div className="explanation-header fade-up">
           <h1 className="explanation-title shiny-heading-text">Diagnostic Risk Attribution</h1>
           <p className="explanation-subtitle">
-            Local SHAP (SHapley Additive exPlanations) margin values explaining patient log-odds divergence from population baseline ({baselinePctDisplay}%).
+            Local TreeSHAP attributions in margin space (Base: {explanation.base_log_odds !== undefined ? `${explanation.base_log_odds.toFixed(2)} log-odds` : `${baselinePctDisplay}%`} → Patient: {riskPctDisplay}% calibrated risk).
           </p>
         </div>
 
@@ -53,8 +53,12 @@ export default function ExplanationPage({ explanation, onBack, onNext }: Explana
                 const isModifiable = !NON_MODIFIABLE_FEATURES.has(factor.feature);
                 const absVal = Math.abs(factor.attribution_value);
                 const barWidth = Math.min(100, Math.max(14, Math.round((absVal / maxAbsVal) * 88)));
-                const formattedVal = `${factor.attribution_value >= 0 ? '+' : ''}${factor.attribution_value.toFixed(2)} log-odds`;
+                const pctDelta = factor.marginal_percentage_impact !== undefined && factor.marginal_percentage_impact !== null
+                  ? ` (${factor.marginal_percentage_impact >= 0 ? '+' : ''}${factor.marginal_percentage_impact.toFixed(1)}% risk)`
+                  : '';
+                const formattedVal = `${factor.attribution_value >= 0 ? '+' : ''}${factor.attribution_value.toFixed(2)} log-odds${pctDelta}`;
                 const isIncrease = factor.direction === 'risk_increasing';
+
 
                 return (
                   <div key={factor.feature || index} className="shap-row" style={{ animationDelay: `${index * 0.08}s` }}>
