@@ -474,6 +474,7 @@ const App = () => {
           doctor={doctorUser} 
           token={doctorToken || ''}
           onLogout={handleDoctorLogout}
+          onGoHome={() => setCurrentPage('landing')}
           onNewAssessment={() => {
             setAssessingPatient(null);
             setCurrentPage('assessment');

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import './RiskAssessment.css';
-import { ArrowLeft, User, Activity, HeartPulse, ChevronRight, ActivitySquare, AlertCircle, Stethoscope } from 'lucide-react';
+import { ArrowLeft, User, Activity, HeartPulse, ChevronRight, ActivitySquare, AlertCircle, Stethoscope, Lock } from 'lucide-react';
 import type { PatientInput } from './api';
 
 interface RiskAssessmentProps {
@@ -205,7 +205,24 @@ export default function RiskAssessment({
               <div className="input-grid">
                 <div className="input-group">
                   <label htmlFor="input-age">
-                    Age (years) {lockedFields?.includes('age') && <span style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 400 }}>(Locked)</span>}
+                    Age (years){' '}
+                    {lockedFields?.includes('age') && (
+                      <span
+                        title="Demographic locked to patient registry record"
+                        style={{
+                          color: '#0284c7',
+                          fontSize: '0.78rem',
+                          fontWeight: 500,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.2rem',
+                          marginLeft: '0.35rem',
+                          cursor: 'help',
+                        }}
+                      >
+                        <Lock size={12} /> (Locked to registry)
+                      </span>
+                    )}
                   </label>
                   <input 
                     id="input-age"
@@ -214,18 +231,37 @@ export default function RiskAssessment({
                     max="120" 
                     value={formData.age} 
                     disabled={lockedFields?.includes('age')}
+                    title={lockedFields?.includes('age') ? 'Demographic locked to patient registry record' : undefined}
                     style={lockedFields?.includes('age') ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : undefined}
                     onChange={(e) => updateField('age', parseFloat(e.target.value) || 18)} 
                   />
                 </div>
                 <div className="input-group">
                   <label htmlFor="input-sex">
-                    Biological Sex {lockedFields?.includes('male') && <span style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 400 }}>(Locked)</span>}
+                    Biological Sex{' '}
+                    {lockedFields?.includes('male') && (
+                      <span
+                        title="Demographic locked to patient registry record"
+                        style={{
+                          color: '#0284c7',
+                          fontSize: '0.78rem',
+                          fontWeight: 500,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.2rem',
+                          marginLeft: '0.35rem',
+                          cursor: 'help',
+                        }}
+                      >
+                        <Lock size={12} /> (Locked to registry)
+                      </span>
+                    )}
                   </label>
                   <select 
                     id="input-sex"
                     value={formData.male} 
                     disabled={lockedFields?.includes('male')}
+                    title={lockedFields?.includes('male') ? 'Demographic locked to patient registry record' : undefined}
                     style={lockedFields?.includes('male') ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : undefined}
                     onChange={(e) => updateField('male', parseInt(e.target.value, 10))}
                   >
