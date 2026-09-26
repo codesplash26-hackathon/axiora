@@ -58,7 +58,7 @@ export default function ExplanationPage({ explanation, onBack, onNext }: Explana
                   : '';
                 const formattedVal = `${factor.attribution_value >= 0 ? '+' : ''}${factor.attribution_value.toFixed(2)} log-odds${pctDelta}`;
                 const isIncrease = factor.direction === 'risk_increasing';
-
+                const isSmall = barWidth < 25;
 
                 return (
                   <div key={factor.feature || index} className="shap-row" style={{ animationDelay: `${index * 0.08}s` }}>
@@ -73,7 +73,9 @@ export default function ExplanationPage({ explanation, onBack, onNext }: Explana
                       {!isIncrease && (
                         <div className="shap-bar-left">
                           <div className="shap-fill decrease-fill" style={{ width: `${barWidth}%` }}>
-                            <span className="shap-value">{formattedVal}</span>
+                            <span className={`shap-value ${isSmall ? 'shap-value-outside-left' : ''}`}>
+                              {formattedVal}
+                            </span>
                           </div>
                         </div>
                       )}
@@ -83,7 +85,9 @@ export default function ExplanationPage({ explanation, onBack, onNext }: Explana
                       {isIncrease && (
                         <div className="shap-bar-right">
                           <div className="shap-fill increase-fill" style={{ width: `${barWidth}%` }}>
-                            <span className="shap-value">{formattedVal}</span>
+                            <span className={`shap-value ${isSmall ? 'shap-value-outside-right' : ''}`}>
+                              {formattedVal}
+                            </span>
                           </div>
                         </div>
                       )}
