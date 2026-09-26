@@ -22,6 +22,7 @@ const App = () => {
   const [doctorUser, setDoctorUser] = useState<DoctorUser | null>(null);
   const [doctorToken, setDoctorToken] = useState<string | null>(null);
   const [isDoctorLoginOpen, setIsDoctorLoginOpen] = useState(false);
+  const [selectedPathwayId, setSelectedPathwayId] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     setMounted(true);
@@ -76,6 +77,7 @@ const App = () => {
   const handleReset = () => {
     setAssessmentData(null);
     setAssessingPatient(null);
+    setSelectedPathwayId(undefined);
     sessionStorage.removeItem('cardiorecourse_assessment');
     setErrorMessage(null);
     setCurrentPage(doctorUser ? 'doctor-dashboard' : 'landing');
@@ -470,12 +472,18 @@ const App = () => {
       ) : currentPage === 'recourse' && assessmentData ? (
         <RecoursePage 
           recourse={assessmentData.recourse}
+          selectedPathwayId={selectedPathwayId}
+          onSelectPathway={(id) => setSelectedPathwayId(id)}
           onBack={() => setCurrentPage('explanation')}
-          onNext={() => setCurrentPage('tomorrows')}
+          onNext={(id) => {
+            if (id !== undefined) setSelectedPathwayId(id);
+            setCurrentPage('tomorrows');
+          }}
         />
       ) : currentPage === 'tomorrows' ? (
         <HealthierTomorrows
           recourse={assessmentData?.recourse}
+          selectedPathwayId={selectedPathwayId}
           onBack={() => setCurrentPage('recourse')}
           onHome={handleReset}
         />

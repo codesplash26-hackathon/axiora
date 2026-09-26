@@ -5,21 +5,25 @@ import type { RecourseResponse } from './api';
 
 interface HealthierTomorrowsProps {
   recourse?: RecourseResponse;
+  selectedPathwayId?: number;
   onBack: () => void;
   onHome: () => void;
 }
 
-const HealthierTomorrows: React.FC<HealthierTomorrowsProps> = ({ recourse, onBack, onHome }) => {
-  const optimalPathway = recourse?.pathways?.[0];
-  const baselinePct = recourse?.patient_baseline_risk ? (recourse.patient_baseline_risk * 100).toFixed(1) : null;
-  const projectedPct = optimalPathway?.projected_risk_percentage.toFixed(1);
-  const reductionPct = optimalPathway?.absolute_risk_reduction.toFixed(1);
+const HealthierTomorrows: React.FC<HealthierTomorrowsProps> = ({ recourse, selectedPathwayId, onBack, onHome }) => {
+  const activePathway = (selectedPathwayId !== undefined
+    ? recourse?.pathways?.find((p) => p.pathway_id === selectedPathwayId)
+    : null) || recourse?.pathways?.[0];
 
-  const bpChange = optimalPathway?.changes?.find((c) => c.feature === 'sysBP');
-  const smokeChange = optimalPathway?.changes?.find((c) => c.feature === 'cigsPerDay');
-  const lipidChange = optimalPathway?.changes?.find((c) => c.feature === 'totChol');
-  const glucoseChange = optimalPathway?.changes?.find((c) => c.feature === 'glucose');
-  const bmiChange = optimalPathway?.changes?.find((c) => c.feature === 'BMI');
+  const baselinePct = recourse?.patient_baseline_risk ? (recourse.patient_baseline_risk * 100).toFixed(1) : null;
+  const projectedPct = activePathway?.projected_risk_percentage.toFixed(1);
+  const reductionPct = activePathway?.absolute_risk_reduction.toFixed(1);
+
+  const bpChange = activePathway?.changes?.find((c) => c.feature === 'sysBP');
+  const smokeChange = activePathway?.changes?.find((c) => c.feature === 'cigsPerDay');
+  const lipidChange = activePathway?.changes?.find((c) => c.feature === 'totChol');
+  const glucoseChange = activePathway?.changes?.find((c) => c.feature === 'glucose');
+  const bmiChange = activePathway?.changes?.find((c) => c.feature === 'BMI');
 
   return (
     <div className="tomorrows-container">
@@ -38,7 +42,7 @@ const HealthierTomorrows: React.FC<HealthierTomorrowsProps> = ({ recourse, onBac
           </p>
         </div>
 
-        {optimalPathway && (
+        {activePathway && (
           <div style={{
             background: 'rgba(255, 255, 255, 0.8)',
             border: '1px solid #bae6fd',
@@ -59,7 +63,7 @@ const HealthierTomorrows: React.FC<HealthierTomorrowsProps> = ({ recourse, onBac
               <div>
                 <div style={{ fontWeight: 700, color: '#0f172a' }}>Personalized Clinical Target Vector</div>
                 <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                  Following {optimalPathway.title} ({optimalPathway.changes.length} actionable modifications)
+                  Following <strong>{activePathway.title}</strong> ({activePathway.changes.length} actionable modifications)
                 </div>
               </div>
             </div>

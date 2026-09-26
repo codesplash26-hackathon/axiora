@@ -1,15 +1,23 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, Printer, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import './RecoursePage.css';
 import type { RecourseResponse } from './api';
 
 interface RecoursePageProps {
   recourse: RecourseResponse;
+  selectedPathwayId?: number;
+  onSelectPathway?: (pathwayId: number) => void;
   onBack: () => void;
-  onNext: () => void;
+  onNext: (selectedPathwayId?: number) => void;
 }
 
-export default function RecoursePage({ recourse, onBack, onNext }: RecoursePageProps) {
+export default function RecoursePage({
+  recourse,
+  selectedPathwayId: externalSelectedPathwayId,
+  onSelectPathway,
+  onBack,
+  onNext,
+}: RecoursePageProps) {
   const pathways = recourse.pathways || [];
   const baselineRisk = recourse.patient_baseline_risk ?? 0;
   const baselineRiskPct = (baselineRisk * 100).toFixed(1);
@@ -22,6 +30,29 @@ export default function RecoursePage({ recourse, onBack, onNext }: RecoursePageP
       curr.projected_risk_score < best.projected_risk_score ? curr : best
     , pathways[0]).pathway_id;
   }, [pathways]);
+
+  // Interactive selection state: defaults to optimal or external prop, but updates on user selection
+  const [selectedPathwayId, setSelectedPathwayId] = useState<number>(() => {
+    if (externalSelectedPathwayId !== undefined) return externalSelectedPathwayId;
+    return optimalPathwayId || pathways[0]?.pathway_id || 1;
+  });
+
+  useEffect(() => {
+    if (externalSelectedPathwayId !== undefined) {
+      setSelectedPathwayId(externalSelectedPathwayId);
+    } else if (optimalPathwayId && !pathways.some(p => p.pathway_id === selectedPathwayId)) {
+      setSelectedPathwayId(optimalPathwayId);
+    }
+  }, [externalSelectedPathwayId, optimalPathwayId, pathways]);
+
+  const handleSelectPathway = (id: number) => {
+    setSelectedPathwayId(id);
+    if (onSelectPathway) {
+      onSelectPathway(id);
+    }
+  };
+
+  const selectedPathway = pathways.find(p => p.pathway_id === selectedPathwayId) || pathways[0];
 
   const handlePrint = () => {
     window.print();
@@ -40,7 +71,7 @@ export default function RecoursePage({ recourse, onBack, onNext }: RecoursePageP
         <div className="recourse-header fade-up">
           <h1 className="recourse-title shiny-heading-text">Prescriptive Recourse Pathways</h1>
           <p className="recourse-subtitle">
-            Feasible, minimal-effort biomarker adjustments generated via Diverse Counterfactual Explanations (DiCE) to reduce cardiovascular risk below the critical threshold.
+            Feasible, minimal-effort biomarker adjustments generated via Diverse Counterfactual Explanations (DiCE) to reduce cardiovascular risk below the critical threshold. Click any pathway to customize your actionable roadmap.
           </p>
 
           {recourse.is_fallback && (
@@ -74,6 +105,7 @@ export default function RecoursePage({ recourse, onBack, onNext }: RecoursePageP
           <div className="pathways-grid">
             {pathways.map((pathway, idx) => {
               const isOptimal = pathway.pathway_id === optimalPathwayId;
+              const isSelected = pathway.pathway_id === selectedPathwayId;
               const reduction = pathway.absolute_risk_reduction ?? 0;
               const formattedReduction = reduction > 0
                 ? `-${reduction.toFixed(1)}%`
@@ -84,9 +116,27 @@ export default function RecoursePage({ recourse, onBack, onNext }: RecoursePageP
               return (
                 <div 
                   key={pathway.pathway_id || idx} 
-                  className={`pathway-card ${isOptimal ? 'highlight' : ''}`}
+                  className={`pathway-card ${isSelected ? 'selected' : ''} ${isOptimal ? 'highlight' : ''}`}
+                  onClick={() => handleSelectPathway(pathway.pathway_id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelectPathway(pathway.pathway_id);
+                    }
+                  }}
+                  aria-pressed={isSelected}
                 >
-                  {isOptimal && <div className="card-badge">Optimal Pathway</div>}
+                  <div className="card-badges-wrapper">
+                    {isOptimal && <div className="card-badge optimal">Optimal Pathway</div>}
+                    {isSelected && (
+                      <div className="card-badge selected">
+                        <CheckCircle2 size={13} style={{ display: 'inline', verticalAlign: '-1px', marginRight: '3px' }} />
+                        Selected
+                      </div>
+                    )}
+                  </div>
                   
                   <div className="pathway-header">
                     <h2 className="pathway-title">{pathway.title}</h2>
@@ -134,6 +184,23 @@ export default function RecoursePage({ recourse, onBack, onNext }: RecoursePageP
                       </div>
                     ))}
                   </div>
+
+                  <button
+                    type="button"
+                    className={`btn-select-pathway ${isSelected ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectPathway(pathway.pathway_id);
+                    }}
+                  >
+                    {isSelected ? (
+                      <>
+                        <CheckCircle2 size={16} /> Selected Pathway
+                      </>
+                    ) : (
+                      <>Choose This Pathway</>
+                    )}
+                  </button>
                 </div>
               );
             })}
@@ -144,8 +211,8 @@ export default function RecoursePage({ recourse, onBack, onNext }: RecoursePageP
           <button className="btn-secondary" onClick={handlePrint}>
             <Printer size={18} className="mr-2" /> Export Action Plan (PDF)
           </button>
-          <button className="btn-gradient-cta" onClick={onNext}>
-            See Healthier Tomorrows <ArrowRight size={18} className="ml-2" />
+          <button className="btn-gradient-cta" onClick={() => onNext(selectedPathwayId)}>
+            See Healthier Tomorrows {selectedPathway ? `(${selectedPathway.title})` : ''} <ArrowRight size={18} className="ml-2" />
           </button>
         </div>
       </main>
