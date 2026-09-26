@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import './RiskAssessment.css';
-import { ArrowLeft, User, Activity, HeartPulse, ChevronRight, ActivitySquare, AlertCircle, Stethoscope, Lock } from 'lucide-react';
+import { ArrowLeft, User, Activity, HeartPulse, ChevronRight, ActivitySquare, AlertCircle, Stethoscope, Lock, Scale, Ruler, Calculator } from 'lucide-react';
 import type { PatientInput } from './api';
 
 interface RiskAssessmentProps {
@@ -30,6 +30,9 @@ export default function RiskAssessment({
   patientHeader,
 }: RiskAssessmentProps) {
   const [currentStep, setCurrentStep] = useState(1);
+  const [bmiMode, setBmiMode] = useState<'direct' | 'calculate'>('calculate');
+  const [heightCm, setHeightCm] = useState<string>('');
+  const [weightKg, setWeightKg] = useState<string>('');
 
   const [formData, setFormData] = useState<PatientInput>(() => ({
     male: 1,
@@ -83,6 +86,54 @@ export default function RiskAssessment({
       return updated;
     });
   };
+
+  const calculateAndSetBmi = (hStr: string, wStr: string) => {
+    const h = parseFloat(hStr);
+    const w = parseFloat(wStr);
+    if (h > 50 && h < 250 && w > 20 && w < 300) {
+      const heightM = h / 100;
+      const calculatedBmi = Number((w / (heightM * heightM)).toFixed(1));
+      updateField('BMI', calculatedBmi);
+    }
+  };
+
+  const handleHeightChange = (val: string) => {
+    setHeightCm(val);
+    calculateAndSetBmi(val, weightKg);
+  };
+
+  const handleWeightChange = (val: string) => {
+    setWeightKg(val);
+    calculateAndSetBmi(heightCm, val);
+  };
+
+  const getBmiCategory = (bmi: number | undefined | null) => {
+    if (!bmi || isNaN(bmi) || bmi <= 0) return null;
+    if (bmi < 18.5) {
+      return {
+        label: 'Underweight',
+        categoryClass: 'underweight',
+      };
+    }
+    if (bmi <= 24.9) {
+      return {
+        label: 'Normal weight',
+        categoryClass: 'normal',
+      };
+    }
+    if (bmi <= 29.9) {
+      return {
+        label: 'Overweight',
+        categoryClass: 'overweight',
+      };
+    }
+    return {
+      label: 'Obese',
+      categoryClass: 'obese',
+    };
+  };
+
+  const bmiCategory = getBmiCategory(formData.BMI);
 
   const handleNext = (e?: React.MouseEvent) => {
     if (e) {
@@ -269,18 +320,144 @@ export default function RiskAssessment({
                     <option value={0}>Female</option>
                   </select>
                 </div>
-                <div className="input-group">
-                  <label htmlFor="input-bmi">Body Mass Index (BMI, kg/m²)</label>
-                  <input 
-                    id="input-bmi"
-                    type="number" 
-                    step="0.1" 
-                    min="15" 
-                    max="55" 
-                    value={formData.BMI} 
-                    onChange={(e) => updateField('BMI', parseFloat(e.target.value) || 20)} 
-                  />
+                {/* BMI Auto-Calculator & Direct Input Section */}
+                <div className="bmi-calculator-wrapper">
+                  <div className="bmi-header-row">
+                    <div className="bmi-header-left">
+                      <label className="bmi-section-label">
+                        <Scale size={16} className="bmi-section-icon" />
+                        Body Mass Index (BMI)
+                      </label>
+                      <span className="bmi-section-subtitle">
+                        Auto-calculate from height &amp; mass or input directly
+                      </span>
+                    </div>
+
+                    {/* Mode Tabs / Pill Selector */}
+                    <div className="bmi-mode-pills" role="tablist" aria-label="BMI Entry Mode">
+                      <button
+                        type="button"
+                        role="tab"
+                        id="tab-bmi-calc"
+                        aria-selected={bmiMode === 'calculate'}
+                        className={`bmi-mode-pill ${bmiMode === 'calculate' ? 'active' : ''}`}
+                        onClick={() => setBmiMode('calculate')}
+                      >
+                        <Calculator size={13} />
+                        <span>Calculate from Height &amp; Weight</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        id="tab-bmi-direct"
+                        aria-selected={bmiMode === 'direct'}
+                        className={`bmi-mode-pill ${bmiMode === 'direct' ? 'active' : ''}`}
+                        onClick={() => setBmiMode('direct')}
+                      >
+                        <span>Enter BMI Directly</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {bmiMode === 'calculate' ? (
+                    <div className="bmi-calc-container">
+                      <div className="bmi-calc-inputs">
+                        <div className="input-group">
+                          <label htmlFor="input-height">
+                            <Ruler size={14} className="input-sub-icon" />
+                            Height (cm)
+                          </label>
+                          <input
+                            id="input-height"
+                            type="number"
+                            min="50"
+                            max="250"
+                            placeholder="e.g. 168"
+                            value={heightCm}
+                            onChange={(e) => handleHeightChange(e.target.value)}
+                          />
+                        </div>
+                        <div className="input-group">
+                          <label htmlFor="input-weight">
+                            <Scale size={14} className="input-sub-icon" />
+                            Weight / Mass (kg)
+                          </label>
+                          <input
+                            id="input-weight"
+                            type="number"
+                            min="20"
+                            max="250"
+                            placeholder="e.g. 62"
+                            value={weightKg}
+                            onChange={(e) => handleWeightChange(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Real-time Preview Card */}
+                      <div className="bmi-preview-card">
+                        <div className="bmi-preview-info">
+                          <span className="bmi-preview-title">Calculated BMI</span>
+                          <div className="bmi-preview-metrics">
+                            <span className="bmi-preview-value">
+                              {formData.BMI ? formData.BMI.toFixed(1) : '--'}
+                            </span>
+                            <span className="bmi-preview-unit">kg/m²</span>
+                          </div>
+                        </div>
+
+                        {bmiCategory && (
+                          <div className={`bmi-category-tag ${bmiCategory.categoryClass}`}>
+                            <span className="category-dot" />
+                            <span>{bmiCategory.label}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* WHO Category Legend */}
+                      <div className="bmi-who-legend">
+                        <span className={`legend-item ${formData.BMI < 18.5 ? 'legend-item-active' : ''}`}>
+                          &lt; 18.5 Underweight
+                        </span>
+                        <span className={`legend-item ${formData.BMI >= 18.5 && formData.BMI <= 24.9 ? 'legend-item-active' : ''}`}>
+                          18.5 – 24.9 Normal weight
+                        </span>
+                        <span className={`legend-item ${formData.BMI >= 25.0 && formData.BMI <= 29.9 ? 'legend-item-active' : ''}`}>
+                          25.0 – 29.9 Overweight
+                        </span>
+                        <span className={`legend-item ${formData.BMI >= 30.0 ? 'legend-item-active' : ''}`}>
+                          ≥ 30.0 Obese
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bmi-direct-container">
+                      <div className="input-group">
+                        <label htmlFor="input-bmi">Direct Body Mass Index (BMI, kg/m²)</label>
+                        <div className="bmi-direct-input-row">
+                          <input
+                            id="input-bmi"
+                            type="number"
+                            step="0.1"
+                            min="15"
+                            max="55"
+                            placeholder="18.5 – 55.0"
+                            value={formData.BMI || ''}
+                            onChange={(e) => updateField('BMI', parseFloat(e.target.value) || 20)}
+                          />
+                          {bmiCategory && (
+                            <div className={`bmi-category-tag ${bmiCategory.categoryClass}`}>
+                              <span className="category-dot" />
+                              <span>{bmiCategory.label}</span>
+                            </div>
+                          )}
+                        </div>
+                        <span className="bmi-input-note">Standard clinical reference range: 15.0 – 55.0 kg/m²</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
+
                 <div className="input-group">
                   <label htmlFor="input-hr">Resting Heart Rate (bpm)</label>
                   <input 
@@ -291,6 +468,15 @@ export default function RiskAssessment({
                     value={formData.heartRate} 
                     onChange={(e) => updateField('heartRate', parseFloat(e.target.value) || 70)} 
                   />
+                </div>
+                <div className="biometric-context-card">
+                  <div className="biometric-context-title">
+                    <HeartPulse size={14} className="biometric-context-icon" />
+                    <span>Clinical Reference: Heart Rate</span>
+                  </div>
+                  <p className="biometric-context-desc">
+                    Typical adult resting pulse ranges from <strong>60 – 100 bpm</strong>. Rates below 60 bpm may indicate athletic conditioning or sinus bradycardia.
+                  </p>
                 </div>
               </div>
             </div>
@@ -306,7 +492,7 @@ export default function RiskAssessment({
                   <input 
                     id="input-sysbp"
                     type="number" 
-                    min="95" 
+                    min="70" 
                     max="295" 
                     value={formData.sysBP} 
                     onChange={(e) => updateField('sysBP', parseFloat(e.target.value) || 120)} 
@@ -317,7 +503,7 @@ export default function RiskAssessment({
                   <input 
                     id="input-diabp"
                     type="number" 
-                    min="50" 
+                    min="40" 
                     max="160" 
                     value={formData.diaBP} 
                     onChange={(e) => updateField('diaBP', parseFloat(e.target.value) || 80)} 
