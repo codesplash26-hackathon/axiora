@@ -114,14 +114,24 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  padding-left: 4rem;
 }
 
 .result-title {
   font-size: 2.5rem;
   font-weight: 800;
-  color: var(--color-primary-dark);
   margin-bottom: 0.25rem;
   line-height: 1.1;
+  background: linear-gradient(to right, #0f172a 20%, #38bdf8 40%, #0891b2 60%, #0f172a 80%);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shineTitle 4s linear infinite;
+}
+
+@keyframes shineTitle {
+  to { background-position: 200% center; }
 }
 
 .result-subtitle {
@@ -253,23 +263,45 @@
   animation: auraBreath 4s infinite alternate ease-in-out;
 }
 
-.orbit-ring-result {
+.icon-orbit-container {
   position: absolute;
-  border-radius: 50%;
-  border: 1px dashed rgba(56, 189, 248, 0.3);
-  z-index: 2;
-}
-
-.orbit-ring-result.r1 {
-  width: 100%;
-  height: 100%;
+  top: 50%; left: 50%;
+  width: 0; height: 0;
+  z-index: 6;
   animation: spinSlow 30s linear infinite;
 }
 
-.orbit-ring-result.r2 {
-  width: 80%;
-  height: 80%;
-  animation: spinSlow 20s linear infinite reverse;
+.orbit-icon-arm {
+  position: absolute;
+  top: 0; left: 0;
+}
+
+.orbit-icon-distance {
+  position: absolute;
+  top: 0; left: 0;
+  transform: translateY(-240px);
+}
+
+.orbit-icon-inner {
+  position: absolute;
+  top: -20px; left: -20px;
+  width: 40px; height: 40px;
+}
+
+.orbit-icon-counter-spin {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  border-radius: 50%;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+  animation: spinSlowReverse 30s linear infinite;
+  border: 1px solid rgba(255,255,255,1);
+}
+
+@keyframes spinSlowReverse {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
 }
 
 @keyframes spinSlow {
@@ -345,9 +377,11 @@
 }
 
 @media (max-width: 992px) {
-  .result-grid { grid-template-columns: 1fr; gap: 2rem; text-align: center; }
-  .result-left { align-items: center; }
-  .result-right { height: 320px; }
+  .result-grid { grid-template-columns: 1fr; gap: 3rem; text-align: center; }
+  .result-left { align-items: center; padding-left: 0; }
+  .result-right { height: auto; min-height: 350px; margin-top: 1rem; }
+  .heart-wrapper-result { max-width: 250px; }
+  .orbit-icon-distance { transform: translateY(-190px); }
   .result-container { height: auto; min-height: 100vh; overflow-y: auto; padding-bottom: 3rem; }
   .result-nav { padding: 1rem 1.5rem; }
   .result-main { padding: 0 1.5rem; }

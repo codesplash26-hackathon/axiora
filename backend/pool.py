@@ -2,12 +2,12 @@ import os
 import asyncio
 import functools
 import multiprocessing
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import Executor, ProcessPoolExecutor, ThreadPoolExecutor
 from typing import Callable, Any, Optional
 
 from backend.worker import warmup_worker, worker_ping
 
-process_pool: Optional[ProcessPoolExecutor] = None
+process_pool: Optional[Executor] = None
 
 
 def get_worker_count() -> int:
@@ -17,20 +17,42 @@ def get_worker_count() -> int:
 
 
 def init_pool():
-    """Initialize process pool executor with eager warmup workers."""
+    """
+    Initialize worker executor pool.
+    Defaults to ProcessPoolExecutor with spawn context for true multi-process isolation
+    and complete elimination of Python's Global Interpreter Lock (GIL) contention.
+    """
     global process_pool
     if process_pool is None:
         workers = get_worker_count()
-        process_pool = ProcessPoolExecutor(max_workers=workers, initializer=warmup_worker)
-        try:
-            list(process_pool.map(worker_ping, range(workers)))
-        except Exception:
-            pass
+        mode = os.getenv("EXECUTOR_MODE", "process").lower()
+        if mode == "process":
+            try:
+                mp_ctx = multiprocessing.get_context("spawn")
+                process_pool = ProcessPoolExecutor(
+                    max_workers=workers,
+                    mp_context=mp_ctx,
+                    initializer=warmup_worker
+                )
+                # Warm-up ping to eagerly start worker processes
+                list(process_pool.map(worker_ping, range(workers)))
+            except Exception:
+                # Resilient fallback to ThreadPoolExecutor if OS forbids spawn
+                process_pool = ThreadPoolExecutor(max_workers=workers, initializer=warmup_worker)
+                try:
+                    list(process_pool.map(worker_ping, range(workers)))
+                except Exception:
+                    pass
+        else:
+            process_pool = ThreadPoolExecutor(max_workers=workers, initializer=warmup_worker)
+            try:
+                list(process_pool.map(worker_ping, range(workers)))
+            except Exception:
+                pass
 
 
-
-def get_executor() -> ProcessPoolExecutor:
-    """Returns or lazily creates the singleton process pool."""
+def get_executor() -> Executor:
+    """Returns or lazily creates the singleton executor pool."""
     global process_pool
     if process_pool is None:
         init_pool()
@@ -51,7 +73,7 @@ def shutdown_executor():
 
 
 async def run_in_pool(func: Callable, *args, **kwargs) -> Any:
-    """Execute function in worker process pool asynchronously."""
+    """Execute function in worker pool asynchronously."""
     global process_pool
     if process_pool is None:
         init_pool()
@@ -61,3 +83,4 @@ async def run_in_pool(func: Callable, *args, **kwargs) -> Any:
         func = functools.partial(func, **kwargs)
 
     return await loop.run_in_executor(process_pool, func, *args)
+

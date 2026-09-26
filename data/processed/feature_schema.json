@@ -26,14 +26,14 @@
   },
   "actionable_boundaries": {
     "sysBP": {
-      "min": 95.0,
+      "min": 70.0,
       "max": 240.0,
       "max_step": 25.0,
       "unit": "mmHg",
       "description": "Systolic Blood Pressure"
     },
     "diaBP": {
-      "min": 60.0,
+      "min": 40.0,
       "max": 140.0,
       "max_step": 15.0,
       "unit": "mmHg",

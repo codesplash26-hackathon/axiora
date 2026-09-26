@@ -1,34 +1,73 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import heartImg from './assets/shiny_tech_heart.png';
-import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge, HeartPulse, AlertTriangle } from 'lucide-react';
+import { Activity, Brain, Search, Heart, Utensils, Dumbbell, Ban, GitMerge, HeartPulse, AlertTriangle, Home, ClipboardList, PieChart, Info, Map, Stethoscope, Sunrise } from 'lucide-react';
 import RiskAssessment from './RiskAssessment';
 import PredictionResult from './PredictionResult';
 import ExplanationPage from './ExplanationPage';
 import RecoursePage from './RecoursePage';
-import { assessPatient } from './api';
-import type { PatientInput, AssessmentResponse } from './api';
+import DoctorLoginModal from './DoctorLoginModal';
+import DoctorDashboardPage from './DoctorDashboardPage';
+import HealthierTomorrows from './HealthierTomorrows';
+import { assessPatient, assessDoctorPatient, logoutDoctor } from './api';
+import type { PatientInput, AssessmentResponse, DoctorUser, PatientRecord } from './api';
 
 const App = () => {
   const [mounted, setMounted] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'landing' | 'assessment' | 'prediction' | 'explanation' | 'recourse'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'assessment' | 'prediction' | 'explanation' | 'recourse' | 'tomorrows' | 'doctor-dashboard'>('landing');
   const [assessmentData, setAssessmentData] = useState<AssessmentResponse | null>(null);
+  const [assessingPatient, setAssessingPatient] = useState<PatientRecord | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [doctorUser, setDoctorUser] = useState<DoctorUser | null>(null);
+  const [doctorToken, setDoctorToken] = useState<string | null>(null);
+  const [isDoctorLoginOpen, setIsDoctorLoginOpen] = useState(false);
+  const [selectedPathwayId, setSelectedPathwayId] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     setMounted(true);
+    try {
+      const savedDoc = sessionStorage.getItem('cardiorecourse_doctor');
+      const savedToken = sessionStorage.getItem('cardiorecourse_token');
+      if (savedDoc && savedToken) {
+        setDoctorUser(JSON.parse(savedDoc));
+        setDoctorToken(savedToken);
+      }
+      const savedAssessment = sessionStorage.getItem('cardiorecourse_assessment');
+      if (savedAssessment) {
+        setAssessmentData(JSON.parse(savedAssessment));
+      }
+    } catch {
+      // Storage read error ignored
+    }
   }, []);
 
   const handleAnalyzePatient = async (patient: PatientInput) => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const response = await assessPatient(patient);
+      let response: AssessmentResponse;
+      if (assessingPatient && doctorToken) {
+        // Runs real XGBoost, calculates SHAP attributions, and saves in Firestore
+        response = await assessDoctorPatient(doctorToken, assessingPatient.patientId, patient);
+      } else {
+        response = await assessPatient(patient);
+      }
       setAssessmentData(response);
+      sessionStorage.setItem('cardiorecourse_assessment', JSON.stringify(response));
       setCurrentPage('prediction');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to reach clinical decision engine';
+      let msg = 'Failed to reach clinical decision engine';
+      if (err instanceof Error) {
+        msg = err.message;
+      } else if (typeof err === 'string') {
+        msg = err;
+      } else if (err && typeof err === 'object') {
+        msg = (err as any).message || (err as any).detail || 'Assessment request failed';
+      }
+      if (typeof msg !== 'string' || msg === '[object Object]' || !msg.trim()) {
+        msg = 'Invalid input parameters or inference request failed';
+      }
       setErrorMessage(msg);
     } finally {
       setIsLoading(false);
@@ -37,19 +76,35 @@ const App = () => {
 
   const handleReset = () => {
     setAssessmentData(null);
+    setAssessingPatient(null);
+    setSelectedPathwayId(undefined);
+    sessionStorage.removeItem('cardiorecourse_assessment');
     setErrorMessage(null);
+    setCurrentPage(doctorUser ? 'doctor-dashboard' : 'landing');
+  };
+
+  const handleDoctorLogout = async () => {
+    if (doctorToken) {
+      await logoutDoctor(doctorToken);
+    }
+    setDoctorUser(null);
+    setDoctorToken(null);
+    setAssessingPatient(null);
+    sessionStorage.removeItem('cardiorecourse_doctor');
+    sessionStorage.removeItem('cardiorecourse_token');
     setCurrentPage('landing');
   };
 
   return (
     <>
       {/* Global Falling Leaves Animation */}
-      <div className="leaves-container global-leaves">
-        {[...Array(25)].map((_, i) => {
-          // On landing page, keep leaves on the right half (near the heart, 55% to 95%)
-          // On other pages, let them fall everywhere (5% to 95%)
-          const leftPos = currentPage === 'landing' ? (55 + Math.random() * 40) : (5 + Math.random() * 90);
-          return (
+      {currentPage !== 'prediction' && currentPage !== 'doctor-dashboard' && (
+        <div className="leaves-container global-leaves">
+          {[...Array(7)].map((_, i) => {
+            // On landing page, keep leaves on the right half
+            // On other pages, let them fall everywhere
+            const leftPos = (currentPage === 'landing') ? (55 + Math.random() * 40) : (5 + Math.random() * 90);
+            return (
             <div key={i} className={`global-falling-leaf g-leaf-${(i % 4) + 1}`} style={{
               left: `${leftPos}%`,
               animationDelay: `${Math.random() * 5}s`,
@@ -58,6 +113,7 @@ const App = () => {
           );
         })}
       </div>
+      )}
 
       {/* Global Real-Time Loading Overlay */}
       {isLoading && (
@@ -121,6 +177,78 @@ const App = () => {
         </div>
       )}
 
+      <DoctorLoginModal 
+        isOpen={isDoctorLoginOpen} 
+        onClose={() => setIsDoctorLoginOpen(false)} 
+        onLogin={(doc, token) => {
+          setDoctorUser(doc);
+          setDoctorToken(token);
+          sessionStorage.setItem('cardiorecourse_doctor', JSON.stringify(doc));
+          sessionStorage.setItem('cardiorecourse_token', token);
+          setCurrentPage('doctor-dashboard');
+        }}
+      />
+
+      {/* Global Side Navigation Panel */}
+      {!doctorUser && (
+        <div className="side-nav-panel">
+          <button 
+            className={`side-nav-item ${currentPage === 'landing' ? 'active' : ''}`}
+            data-tooltip="Home"
+            onClick={() => setCurrentPage('landing')}
+          >
+            <Home size={20} />
+          </button>
+          <button 
+            className={`side-nav-item ${currentPage === 'assessment' ? 'active' : ''}`}
+            data-tooltip="Risk Assessment"
+            onClick={() => setCurrentPage('assessment')}
+          >
+            <ClipboardList size={20} />
+          </button>
+          <button 
+            className={`side-nav-item ${currentPage === 'prediction' ? 'active' : ''}`}
+            data-tooltip="Prediction Results"
+            onClick={() => {
+              if (assessmentData) setCurrentPage('prediction');
+              else setCurrentPage('assessment');
+            }}
+          >
+            <PieChart size={20} />
+          </button>
+          <button 
+            className={`side-nav-item ${currentPage === 'explanation' ? 'active' : ''}`}
+            data-tooltip="AI Explanation (SHAP)"
+            onClick={() => {
+              if (assessmentData) setCurrentPage('explanation');
+              else setCurrentPage('assessment');
+            }}
+          >
+            <Info size={20} />
+          </button>
+          <button 
+            className={`side-nav-item ${currentPage === 'recourse' ? 'active' : ''}`}
+            data-tooltip="Action Plan (DiCE)"
+            onClick={() => {
+              if (assessmentData) setCurrentPage('recourse');
+              else setCurrentPage('assessment');
+            }}
+          >
+            <Map size={20} />
+          </button>
+          <button 
+            className={`side-nav-item ${currentPage === 'tomorrows' ? 'active' : ''}`}
+            data-tooltip="Healthier Tomorrows"
+            onClick={() => {
+              if (assessmentData) setCurrentPage('tomorrows');
+              else setCurrentPage('assessment');
+            }}
+          >
+            <Sunrise size={20} />
+          </button>
+        </div>
+      )}
+
       {currentPage === 'landing' ? (
         <div className={`landing-container ${mounted ? 'mounted' : ''}`}>
 
@@ -130,8 +258,36 @@ const App = () => {
               <Heart className="logo-heart-nav" size={28} />
             </div>
             <div className="nav-actions">
-              <button className="btn-login" onClick={() => setCurrentPage('assessment')}>Clinical Portal</button>
-              <button className="btn-signup" onClick={() => setCurrentPage('assessment')}>Assess Patient</button>
+              {doctorUser ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                  <div className="doctor-profile-chip" style={{ background: 'rgba(255, 255, 255, 0.92)', borderColor: '#cbd5e1', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                    <div className="doctor-avatar-circle" style={{ width: '26px', height: '26px', fontSize: '10px' }}>
+                      {(doctorUser.fullName || doctorUser.email || 'DR')
+                        .replace(/^Dr\.\s*/i, '')
+                        .trim()
+                        .split(/\s+/)
+                        .map((n) => n[0])
+                        .slice(0, 2)
+                        .join('')
+                        .toUpperCase() || 'DR'}
+                    </div>
+                    <div className="doctor-meta">
+                      <span className="doctor-meta-name" style={{ color: '#0f172a' }}>
+                        {doctorUser.fullName || doctorUser.email}
+                      </span>
+                      <span className="doctor-meta-hospital" style={{ color: '#64748b' }}>
+                        {doctorUser.hospital || 'Hospital Staff'}
+                      </span>
+                    </div>
+                  </div>
+                  <button className="btn-login" onClick={handleDoctorLogout}>Sign Out</button>
+                  <button className="btn-signup" onClick={() => setCurrentPage('doctor-dashboard')}>Dashboard</button>
+                </div>
+              ) : (
+                <button className="btn-signup" onClick={() => setIsDoctorLoginOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Stethoscope size={18} /> Doctor Portal
+                </button>
+              )}
             </div>
           </nav>
 
@@ -226,9 +382,6 @@ const App = () => {
                 <button className="btn-primary" onClick={() => setCurrentPage('assessment')}>
                   Check My Risk <span className="arrow">→</span>
                 </button>
-                <button className="btn-secondary" onClick={() => setCurrentPage('assessment')}>
-                  See How It Works
-                </button>
               </div>
 
               <div className="features-row fade-up-4">
@@ -316,7 +469,14 @@ const App = () => {
         <PredictionResult 
           prediction={assessmentData.prediction}
           latencyMs={assessmentData.total_latency_ms}
-          onBack={() => setCurrentPage('assessment')} 
+          onBack={() => {
+            if (doctorUser) {
+              setAssessingPatient(null);
+              setCurrentPage('doctor-dashboard');
+            } else {
+              setCurrentPage('assessment');
+            }
+          }} 
           onNext={() => setCurrentPage('explanation')}
         />
       ) : currentPage === 'explanation' && assessmentData ? (
@@ -328,14 +488,56 @@ const App = () => {
       ) : currentPage === 'recourse' && assessmentData ? (
         <RecoursePage 
           recourse={assessmentData.recourse}
+          selectedPathwayId={selectedPathwayId}
+          onSelectPathway={(id) => setSelectedPathwayId(id)}
           onBack={() => setCurrentPage('explanation')}
+          onNext={(id) => {
+            if (id !== undefined) setSelectedPathwayId(id);
+            setCurrentPage('tomorrows');
+          }}
+        />
+      ) : currentPage === 'tomorrows' ? (
+        <HealthierTomorrows
+          recourse={assessmentData?.recourse}
+          selectedPathwayId={selectedPathwayId}
+          onBack={() => setCurrentPage('recourse')}
           onHome={handleReset}
+        />
+      ) : currentPage === 'doctor-dashboard' && doctorUser ? (
+        <DoctorDashboardPage 
+          doctor={doctorUser} 
+          token={doctorToken || ''}
+          onLogout={handleDoctorLogout}
+          onGoHome={() => setCurrentPage('landing')}
+          onNewAssessment={() => {
+            setAssessingPatient(null);
+            setCurrentPage('assessment');
+          }}
+          onAssessPatient={(pt) => {
+            setAssessingPatient(pt);
+            setCurrentPage('assessment');
+          }}
+          onViewAssessmentResult={(res) => {
+            setAssessmentData(res);
+            sessionStorage.setItem('cardiorecourse_assessment', JSON.stringify(res));
+            setCurrentPage('prediction');
+          }}
         />
       ) : (
         <RiskAssessment 
-          onBack={() => setCurrentPage('landing')} 
+          onBack={() => {
+            setAssessingPatient(null);
+            setCurrentPage(doctorUser ? 'doctor-dashboard' : 'landing');
+          }} 
           onAnalyze={handleAnalyzePatient} 
           isLoading={isLoading}
+          patientHeader={assessingPatient ? { patientId: assessingPatient.patientId, fullName: assessingPatient.fullName } : undefined}
+          lockedFields={assessingPatient ? ['age', 'male'] : undefined}
+          initialValues={assessingPatient ? {
+            age: assessingPatient.age,
+            male: assessingPatient.sex.toLowerCase() === 'male' ? 1 : 0,
+            ...(assessingPatient.baselineBiomarkers || {})
+          } : undefined}
         />
       )}
     </>

@@ -103,6 +103,8 @@
   z-index: 2;
   opacity: 0;
   animation: slideInRow 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  min-height: 44px;
+  align-items: center;
 }
 
 @keyframes slideInRow {
@@ -116,6 +118,7 @@
   align-items: center;
   font-size: 0.95rem;
   font-weight: 600;
+  width: 100%;
 }
 
 .factor-name {
@@ -146,6 +149,7 @@
   align-items: center;
   height: 32px;
   position: relative;
+  width: 100%;
 }
 
 .shap-center-point {
@@ -163,27 +167,35 @@
 .shap-bar-left {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   height: 100%;
+  position: relative;
 }
 
 .shap-bar-right {
   display: flex;
   justify-content: flex-start;
+  align-items: center;
   height: 100%;
+  position: relative;
 }
 
 .shap-fill {
-  height: 100%;
+  height: 26px !important;
+  max-height: 26px !important;
   display: flex;
   align-items: center;
-  padding: 0 0.8rem;
+  padding: 0 0.6rem;
   color: white;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   border-radius: 4px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   transform-origin: center;
   animation: growBar 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  position: relative;
 }
 
 .shap-bar-left .shap-fill {
@@ -206,10 +218,39 @@
 
 .decrease-fill {
   background: linear-gradient(90deg, #10b981, #34d399);
+  white-space: nowrap !important;
 }
 
 .increase-fill {
   background: linear-gradient(90deg, #f43f5e, #fb7185);
+  white-space: nowrap !important;
+}
+
+.shap-value {
+  white-space: nowrap !important;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  display: inline-block;
+  line-height: 1;
+}
+
+.shap-value-outside-left {
+  position: absolute;
+  right: calc(100% + 8px);
+  color: #059669;
+  text-shadow: none;
+  font-weight: 700;
+  white-space: nowrap !important;
+}
+
+.shap-value-outside-right {
+  position: absolute;
+  left: calc(100% + 8px);
+  color: #e11d48;
+  text-shadow: none;
+  font-weight: 700;
+  white-space: nowrap !important;
 }
 
 /* Chart Legend */

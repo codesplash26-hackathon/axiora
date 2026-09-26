@@ -9,6 +9,7 @@ from ml_core.ml_engine import (
     generate_recourse,
     validate_patient_dict,
     initialize_engine,
+    get_permitted_range,
     CANONICAL_FEATURES
 )
 
@@ -18,6 +19,7 @@ __all__ = [
     "generate_recourse",
     "validate_patient_dict",
     "initialize_engine",
+    "get_permitted_range",
     "CANONICAL_FEATURES"
 ]
 

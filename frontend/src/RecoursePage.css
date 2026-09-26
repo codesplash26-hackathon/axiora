@@ -79,23 +79,35 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.25s ease;
+  cursor: pointer;
 }
 
 .pathway-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 45px -5px rgba(14, 165, 233, 0.12);
+  box-shadow: 0 20px 45px -5px rgba(14, 165, 233, 0.16);
 }
 
 .pathway-card.highlight {
   border: 2px solid var(--color-accent-teal);
 }
 
-.card-badge {
+.pathway-card.selected {
+  border: 2px solid #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.22), 0 20px 45px -5px rgba(2, 132, 199, 0.2) !important;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.card-badges-wrapper {
   position: absolute;
   top: -12px;
-  right: 24px;
-  background: linear-gradient(135deg, var(--color-accent-teal), #059669);
+  right: 20px;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 5;
+}
+
+.card-badge {
   color: white;
   font-size: 0.75rem;
   font-weight: 700;
@@ -104,6 +116,49 @@
   padding: 0.3rem 0.8rem;
   border-radius: 9999px;
   box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3);
+}
+
+.card-badge.optimal {
+  background: linear-gradient(135deg, var(--color-accent-teal), #059669);
+}
+
+.card-badge.selected {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.btn-select-pathway {
+  margin-top: 1.5rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.btn-select-pathway:hover {
+  background: #e0f2fe;
+  color: #0284c7;
+  border-color: #38bdf8;
+}
+
+.btn-select-pathway.active {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
 }
 
 .pathway-header {

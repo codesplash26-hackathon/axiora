@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 # Base Directory (Project Root)
 BASE_DIR = Path(__file__).resolve().parent
@@ -24,4 +24,4 @@ FEATURE_SCHEMA_PATH = PROCESSED_DATA_DIR / "feature_schema.json"
 # Core Service Configuration
 HOST = "127.0.0.1"
 PORT = 8000
-SLA_TIMEOUT_SECONDS = 1.4
+SLA_TIMEOUT_SECONDS = 5.0

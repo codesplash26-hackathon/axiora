@@ -183,32 +183,121 @@
 .input-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .input-group label {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-secondary-text);
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
-.input-group input,
-.input-group select {
-  padding: 0.8rem 1rem;
-  border: 2px solid #e2e8f0;
+.label-with-locked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.locked-registry-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: #0284c7;
+  background: #e0f2fe;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.input-micro-hint {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #64748b;
+  line-height: 1.25;
+}
+
+/* Enhanced Input Affordance */
+.input-group select,
+.input-group > input {
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1;
   border-radius: 0.75rem;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
   color: var(--color-primary-dark);
-  background: white;
-  transition: all 0.2s ease;
+  background: rgba(248, 250, 252, 0.7);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.input-group input:focus,
-.input-group select:focus {
+.input-group select:hover,
+.input-group > input:hover {
+  border-color: #94a3b8;
+}
+
+.input-group select:focus,
+.input-group > input:focus {
   outline: none;
-  border-color: var(--color-accent-blue);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Compound Input with Suffix */
+.input-with-suffix {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: rgba(248, 250, 252, 0.7);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.input-with-suffix:hover {
+  border-color: #94a3b8;
+}
+
+.input-with-suffix:focus-within {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  outline: none;
+}
+
+.input-with-suffix input {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0.75rem 0.75rem 0.75rem 1rem;
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.input-with-suffix input:focus {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.input-suffix {
+  padding-right: 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
 }
 
 /* Info Box */
@@ -294,5 +383,241 @@
   
   .progress-label span:not(.step-num) {
     display: none;
+  }
+}
+
+/* ========================================================
+   Streamlined Single-Card BMI Calculator Widget
+   ======================================================== */
+.bmi-streamlined-widget {
+  grid-column: 1 / -1;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.15rem 1.35rem;
+  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  margin: 0.25rem 0;
+}
+
+.bmi-streamlined-widget:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+}
+
+.bmi-widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.bmi-widget-title-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.bmi-widget-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+}
+
+.bmi-widget-icon {
+  color: var(--color-accent-blue);
+}
+
+/* Mode Tabs / Pill Switcher */
+.bmi-mode-pills {
+  display: inline-flex;
+  background: #f1f5f9;
+  padding: 0.2rem;
+  border-radius: 9999px;
+  gap: 0.2rem;
+  border: 1px solid #e2e8f0;
+}
+
+.bmi-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.775rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.bmi-mode-pill:hover:not(.active) {
+  color: #1e293b;
+}
+
+.bmi-mode-pill.active {
+  background: #ffffff;
+  color: #0284c7;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Widget Body */
+.bmi-widget-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.bmi-calc-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+/* Streamlined Inline Result Badge */
+.bmi-inline-badge-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.9rem;
+}
+
+.bmi-badge-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.bmi-badge-caption {
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.bmi-badge-figure {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.bmi-badge-sep {
+  color: #cbd5e1;
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+.bmi-sync-note {
+  font-size: 0.725rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Status Chip */
+.bmi-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.chip-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.bmi-status-chip.normal {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+}
+.bmi-status-chip.normal .chip-bullet {
+  background: #059669;
+}
+
+.bmi-status-chip.overweight {
+  background: #fffbeb;
+  color: #d97706;
+  border-color: #fde68a;
+}
+.bmi-status-chip.overweight .chip-bullet {
+  background: #d97706;
+}
+
+.bmi-status-chip.obese {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+.bmi-status-chip.obese .chip-bullet {
+  background: #dc2626;
+}
+
+.bmi-status-chip.underweight {
+  background: #f0f9ff;
+  color: #0284c7;
+  border-color: #bae6fd;
+}
+.bmi-status-chip.underweight .chip-bullet {
+  background: #0284c7;
+}
+
+/* Direct Input Layout */
+.bmi-direct-pair {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.bmi-direct-chip-wrap {
+  display: flex;
+  align-items: center;
+  height: 42px;
+}
+
+@media (max-width: 640px) {
+  .bmi-calc-pair {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+  .bmi-inline-badge-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .bmi-mode-pills {
+    width: 100%;
+  }
+  .bmi-mode-pill {
+    flex: 1;
+    justify-content: center;
+  }
+  .bmi-direct-pair {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .bmi-direct-chip-wrap {
+    height: auto;
   }
 }
