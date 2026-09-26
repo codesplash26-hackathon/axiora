@@ -9,13 +9,14 @@ import RecoursePage from './RecoursePage';
 import DoctorLoginModal from './DoctorLoginModal';
 import DoctorDashboardPage from './DoctorDashboardPage';
 import HealthierTomorrows from './HealthierTomorrows';
-import { assessPatient, logoutDoctor } from './api';
-import type { PatientInput, AssessmentResponse, DoctorUser } from './api';
+import { assessPatient, assessDoctorPatient, logoutDoctor } from './api';
+import type { PatientInput, AssessmentResponse, DoctorUser, PatientRecord } from './api';
 
 const App = () => {
   const [mounted, setMounted] = useState(false);
   const [currentPage, setCurrentPage] = useState<'landing' | 'assessment' | 'prediction' | 'explanation' | 'recourse' | 'tomorrows' | 'doctor-dashboard'>('landing');
   const [assessmentData, setAssessmentData] = useState<AssessmentResponse | null>(null);
+  const [assessingPatient, setAssessingPatient] = useState<PatientRecord | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [doctorUser, setDoctorUser] = useState<DoctorUser | null>(null);
@@ -44,7 +45,13 @@ const App = () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const response = await assessPatient(patient);
+      let response: AssessmentResponse;
+      if (assessingPatient && doctorToken) {
+        // Runs real XGBoost, calculates SHAP attributions, and saves in Firestore
+        response = await assessDoctorPatient(doctorToken, assessingPatient.patientId, patient);
+      } else {
+        response = await assessPatient(patient);
+      }
       setAssessmentData(response);
       sessionStorage.setItem('cardiorecourse_assessment', JSON.stringify(response));
       setCurrentPage('prediction');
@@ -58,9 +65,10 @@ const App = () => {
 
   const handleReset = () => {
     setAssessmentData(null);
+    setAssessingPatient(null);
     sessionStorage.removeItem('cardiorecourse_assessment');
     setErrorMessage(null);
-    setCurrentPage('landing');
+    setCurrentPage(doctorUser ? 'doctor-dashboard' : 'landing');
   };
 
   const handleDoctorLogout = async () => {
@@ -69,6 +77,7 @@ const App = () => {
     }
     setDoctorUser(null);
     setDoctorToken(null);
+    setAssessingPatient(null);
     sessionStorage.removeItem('cardiorecourse_doctor');
     sessionStorage.removeItem('cardiorecourse_token');
     setCurrentPage('landing');
@@ -432,7 +441,14 @@ const App = () => {
         <PredictionResult 
           prediction={assessmentData.prediction}
           latencyMs={assessmentData.total_latency_ms}
-          onBack={() => setCurrentPage('assessment')} 
+          onBack={() => {
+            if (doctorUser) {
+              setAssessingPatient(null);
+              setCurrentPage('doctor-dashboard');
+            } else {
+              setCurrentPage('assessment');
+            }
+          }} 
           onNext={() => setCurrentPage('explanation')}
         />
       ) : currentPage === 'explanation' && assessmentData ? (
@@ -458,7 +474,14 @@ const App = () => {
           doctor={doctorUser} 
           token={doctorToken || ''}
           onLogout={handleDoctorLogout}
-          onNewAssessment={() => setCurrentPage('assessment')}
+          onNewAssessment={() => {
+            setAssessingPatient(null);
+            setCurrentPage('assessment');
+          }}
+          onAssessPatient={(pt) => {
+            setAssessingPatient(pt);
+            setCurrentPage('assessment');
+          }}
           onViewAssessmentResult={(res) => {
             setAssessmentData(res);
             sessionStorage.setItem('cardiorecourse_assessment', JSON.stringify(res));
@@ -467,9 +490,19 @@ const App = () => {
         />
       ) : (
         <RiskAssessment 
-          onBack={() => setCurrentPage('landing')} 
+          onBack={() => {
+            setAssessingPatient(null);
+            setCurrentPage(doctorUser ? 'doctor-dashboard' : 'landing');
+          }} 
           onAnalyze={handleAnalyzePatient} 
           isLoading={isLoading}
+          patientHeader={assessingPatient ? { patientId: assessingPatient.patientId, fullName: assessingPatient.fullName } : undefined}
+          lockedFields={assessingPatient ? ['age', 'male'] : undefined}
+          initialValues={assessingPatient ? {
+            age: assessingPatient.age,
+            male: assessingPatient.sex.toLowerCase() === 'male' ? 1 : 0,
+            ...(assessingPatient.baselineBiomarkers || {})
+          } : undefined}
         />
       )}
     </>
