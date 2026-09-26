@@ -2,11 +2,15 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, Field
 
+from fastapi.security import HTTPAuthorizationCredentials
 from starlette.concurrency import run_in_threadpool
 from backend.auth.auth_handler import (
     create_access_token,
+    decode_access_token,
     get_current_doctor,
     hash_password,
+    revoke_token,
+    security,
     verify_password,
 )
 from backend.db.firestore_service import (
@@ -130,3 +134,22 @@ async def get_current_doctor_profile(
     Returns the currently authenticated doctor's profile.
     """
     return DoctorProfileResponse(**_clean_doctor_dict(current_doctor))
+
+
+@router.post("/logout")
+async def logout_doctor(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+):
+    """
+    Revokes the current doctor's access token, preventing any further use.
+    """
+    if credentials and credentials.credentials:
+        try:
+            payload = decode_access_token(credentials.credentials)
+            jti = payload.get("jti")
+            if jti:
+                revoke_token(jti)
+        except Exception:
+            pass
+    return {"status": "success", "message": "Successfully logged out. Session revoked."}
+

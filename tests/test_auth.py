@@ -77,3 +77,34 @@ def test_doctor_registration_and_login_flow():
     # 6. Access /me without token
     unauth_resp = client.get("/auth/doctor/me")
     assert unauth_resp.status_code == 401
+
+
+def test_doctor_logout_and_token_revocation():
+    email = "dr.revoked@hospital.lk"
+    password = "SecurePassword123"
+
+    reg_payload = {
+        "email": email,
+        "password": password,
+        "fullName": "Dr. Revocation Test",
+        "specialization": "Cardiology",
+        "hospital": "City Hospital",
+    }
+    resp = client.post("/auth/doctor/register", json=reg_payload)
+    assert resp.status_code == 201
+    token = resp.json()["access_token"]
+
+    # Active token succeeds
+    me_resp1 = client.get("/auth/doctor/me", headers={"Authorization": f"Bearer {token}"})
+    assert me_resp1.status_code == 200
+
+    # Logout revokes token
+    logout_resp = client.post("/auth/doctor/logout", headers={"Authorization": f"Bearer {token}"})
+    assert logout_resp.status_code == 200
+    assert logout_resp.json()["status"] == "success"
+
+    # Subsequent access with same token is rejected
+    me_resp2 = client.get("/auth/doctor/me", headers={"Authorization": f"Bearer {token}"})
+    assert me_resp2.status_code == 401
+    assert "revoked" in me_resp2.json()["detail"].lower()
+
