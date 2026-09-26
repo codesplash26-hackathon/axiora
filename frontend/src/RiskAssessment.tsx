@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import './RiskAssessment.css';
-import { ArrowLeft, User, Activity, HeartPulse, ChevronRight, ActivitySquare, AlertCircle, Stethoscope, Lock, Scale, Ruler, Calculator } from 'lucide-react';
+import { ArrowLeft, User, Activity, HeartPulse, ChevronRight, ActivitySquare, AlertCircle, Stethoscope, Lock, Scale, Calculator } from 'lucide-react';
 import type { PatientInput } from './api';
 
 interface RiskAssessmentProps {
@@ -117,7 +117,7 @@ export default function RiskAssessment({
     }
     if (bmi <= 24.9) {
       return {
-        label: 'Normal weight',
+        label: 'Normal Weight',
         categoryClass: 'normal',
       };
     }
@@ -255,82 +255,63 @@ export default function RiskAssessment({
               <h2 className="step-title"><User size={24} className="step-icon" /> Step 1: Personal &amp; Biometrics</h2>
               <div className="input-grid">
                 <div className="input-group">
-                  <label htmlFor="input-age">
-                    Age (years){' '}
+                  <div className="label-with-locked">
+                    <label htmlFor="input-age">Age</label>
                     {lockedFields?.includes('age') && (
-                      <span
-                        title="Demographic locked to patient registry record"
-                        style={{
-                          color: '#0284c7',
-                          fontSize: '0.78rem',
-                          fontWeight: 500,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.2rem',
-                          marginLeft: '0.35rem',
-                          cursor: 'help',
-                        }}
-                      >
-                        <Lock size={12} /> (Locked to registry)
+                      <span className="locked-registry-badge" title="Demographic locked to patient registry record">
+                        <Lock size={11} /> Locked
                       </span>
                     )}
-                  </label>
-                  <input 
-                    id="input-age"
-                    type="number" 
-                    min="18" 
-                    max="120" 
-                    value={formData.age} 
-                    disabled={lockedFields?.includes('age')}
-                    title={lockedFields?.includes('age') ? 'Demographic locked to patient registry record' : undefined}
-                    style={lockedFields?.includes('age') ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : undefined}
-                    onChange={(e) => updateField('age', parseFloat(e.target.value) || 18)} 
-                  />
+                  </div>
+                  <span className="input-micro-hint">Adult screening baseline (18 – 120 yrs)</span>
+                  <div className="input-with-suffix">
+                    <input 
+                      id="input-age"
+                      type="number" 
+                      min="18" 
+                      max="120" 
+                      value={formData.age} 
+                      disabled={lockedFields?.includes('age')}
+                      title={lockedFields?.includes('age') ? 'Demographic locked to patient registry record' : undefined}
+                      style={lockedFields?.includes('age') ? { cursor: 'not-allowed', color: '#64748b' } : undefined}
+                      onChange={(e) => updateField('age', parseFloat(e.target.value) || 18)} 
+                    />
+                    <span className="input-suffix">yrs</span>
+                  </div>
                 </div>
+
                 <div className="input-group">
-                  <label htmlFor="input-sex">
-                    Biological Sex{' '}
+                  <div className="label-with-locked">
+                    <label htmlFor="input-sex">Biological Sex</label>
                     {lockedFields?.includes('male') && (
-                      <span
-                        title="Demographic locked to patient registry record"
-                        style={{
-                          color: '#0284c7',
-                          fontSize: '0.78rem',
-                          fontWeight: 500,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.2rem',
-                          marginLeft: '0.35rem',
-                          cursor: 'help',
-                        }}
-                      >
-                        <Lock size={12} /> (Locked to registry)
+                      <span className="locked-registry-badge" title="Demographic locked to patient registry record">
+                        <Lock size={11} /> Locked
                       </span>
                     )}
-                  </label>
+                  </div>
+                  <span className="input-micro-hint">Baseline demographic profile</span>
                   <select 
                     id="input-sex"
                     value={formData.male} 
                     disabled={lockedFields?.includes('male')}
                     title={lockedFields?.includes('male') ? 'Demographic locked to patient registry record' : undefined}
-                    style={lockedFields?.includes('male') ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : undefined}
+                    style={lockedFields?.includes('male') ? { cursor: 'not-allowed', color: '#64748b' } : undefined}
                     onChange={(e) => updateField('male', parseInt(e.target.value, 10))}
                   >
                     <option value={1}>Male</option>
                     <option value={0}>Female</option>
                   </select>
                 </div>
-                {/* BMI Auto-Calculator & Direct Input Section */}
-                <div className="bmi-calculator-wrapper">
-                  <div className="bmi-header-row">
-                    <div className="bmi-header-left">
-                      <label className="bmi-section-label">
-                        <Scale size={16} className="bmi-section-icon" />
-                        Body Mass Index (BMI)
-                      </label>
-                      <span className="bmi-section-subtitle">
-                        Auto-calculate from height &amp; mass or input directly
-                      </span>
+
+                {/* Condensed Single-Card BMI Calculator Widget */}
+                <div className="bmi-streamlined-widget">
+                  <div className="bmi-widget-header">
+                    <div className="bmi-widget-title-area">
+                      <div className="bmi-widget-heading">
+                        <Scale size={15} className="bmi-widget-icon" />
+                        <span>Body Mass Index (BMI)</span>
+                      </div>
+                      <span className="input-micro-hint">Auto-calculate from height &amp; weight or enter directly</span>
                     </div>
 
                     {/* Mode Tabs / Pill Selector */}
@@ -344,7 +325,7 @@ export default function RiskAssessment({
                         onClick={() => setBmiMode('calculate')}
                       >
                         <Calculator size={13} />
-                        <span>Calculate from Height &amp; Weight</span>
+                        <span>Calculate</span>
                       </button>
                       <button
                         type="button"
@@ -354,129 +335,124 @@ export default function RiskAssessment({
                         className={`bmi-mode-pill ${bmiMode === 'direct' ? 'active' : ''}`}
                         onClick={() => setBmiMode('direct')}
                       >
-                        <span>Enter BMI Directly</span>
+                        <span>Direct Input</span>
                       </button>
                     </div>
                   </div>
 
                   {bmiMode === 'calculate' ? (
-                    <div className="bmi-calc-container">
-                      <div className="bmi-calc-inputs">
+                    <div className="bmi-widget-body">
+                      <div className="bmi-calc-pair">
                         <div className="input-group">
                           <label htmlFor="input-height">
-                            <Ruler size={14} className="input-sub-icon" />
-                            Height (cm)
+                            <span>Height</span>
+                            <span className="input-micro-hint">Standing stature (50 – 250 cm)</span>
                           </label>
-                          <input
-                            id="input-height"
-                            type="number"
-                            min="50"
-                            max="250"
-                            placeholder="e.g. 168"
-                            value={heightCm}
-                            onChange={(e) => handleHeightChange(e.target.value)}
-                          />
+                          <div className="input-with-suffix">
+                            <input
+                              id="input-height"
+                              type="number"
+                              min="50"
+                              max="250"
+                              placeholder="e.g. 170"
+                              value={heightCm}
+                              onChange={(e) => handleHeightChange(e.target.value)}
+                            />
+                            <span className="input-suffix">cm</span>
+                          </div>
                         </div>
+
                         <div className="input-group">
                           <label htmlFor="input-weight">
-                            <Scale size={14} className="input-sub-icon" />
-                            Weight / Mass (kg)
+                            <span>Weight / Mass</span>
+                            <span className="input-micro-hint">Measured body mass (20 – 250 kg)</span>
                           </label>
-                          <input
-                            id="input-weight"
-                            type="number"
-                            min="20"
-                            max="250"
-                            placeholder="e.g. 62"
-                            value={weightKg}
-                            onChange={(e) => handleWeightChange(e.target.value)}
-                          />
+                          <div className="input-with-suffix">
+                            <input
+                              id="input-weight"
+                              type="number"
+                              min="20"
+                              max="250"
+                              placeholder="e.g. 68"
+                              value={weightKg}
+                              onChange={(e) => handleWeightChange(e.target.value)}
+                            />
+                            <span className="input-suffix">kg</span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Real-time Preview Card */}
-                      <div className="bmi-preview-card">
-                        <div className="bmi-preview-info">
-                          <span className="bmi-preview-title">Calculated BMI</span>
-                          <div className="bmi-preview-metrics">
-                            <span className="bmi-preview-value">
-                              {formData.BMI ? formData.BMI.toFixed(1) : '--'}
-                            </span>
-                            <span className="bmi-preview-unit">kg/m²</span>
-                          </div>
+                      {/* Streamlined Inline Result Badge */}
+                      <div className="bmi-inline-badge-bar">
+                        <div className="bmi-badge-left">
+                          <span className="bmi-badge-caption">Calculated BMI:</span>
+                          <span className="bmi-badge-figure">
+                            {formData.BMI ? `${formData.BMI.toFixed(1)} kg/m²` : '-- kg/m²'}
+                          </span>
+                          {bmiCategory && (
+                            <>
+                              <span className="bmi-badge-sep">•</span>
+                              <span className={`bmi-status-chip ${bmiCategory.categoryClass}`}>
+                                <span className="chip-bullet" />
+                                <span>{bmiCategory.label}</span>
+                              </span>
+                            </>
+                          )}
                         </div>
-
-                        {bmiCategory && (
-                          <div className={`bmi-category-tag ${bmiCategory.categoryClass}`}>
-                            <span className="category-dot" />
-                            <span>{bmiCategory.label}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* WHO Category Legend */}
-                      <div className="bmi-who-legend">
-                        <span className={`legend-item ${formData.BMI < 18.5 ? 'legend-item-active' : ''}`}>
-                          &lt; 18.5 Underweight
-                        </span>
-                        <span className={`legend-item ${formData.BMI >= 18.5 && formData.BMI <= 24.9 ? 'legend-item-active' : ''}`}>
-                          18.5 – 24.9 Normal weight
-                        </span>
-                        <span className={`legend-item ${formData.BMI >= 25.0 && formData.BMI <= 29.9 ? 'legend-item-active' : ''}`}>
-                          25.0 – 29.9 Overweight
-                        </span>
-                        <span className={`legend-item ${formData.BMI >= 30.0 ? 'legend-item-active' : ''}`}>
-                          ≥ 30.0 Obese
-                        </span>
+                        <span className="bmi-sync-note">Synced with risk model</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="bmi-direct-container">
-                      <div className="input-group">
-                        <label htmlFor="input-bmi">Direct Body Mass Index (BMI, kg/m²)</label>
-                        <div className="bmi-direct-input-row">
-                          <input
-                            id="input-bmi"
-                            type="number"
-                            step="0.1"
-                            min="15"
-                            max="55"
-                            placeholder="18.5 – 55.0"
-                            value={formData.BMI || ''}
-                            onChange={(e) => updateField('BMI', parseFloat(e.target.value) || 20)}
-                          />
-                          {bmiCategory && (
-                            <div className={`bmi-category-tag ${bmiCategory.categoryClass}`}>
-                              <span className="category-dot" />
-                              <span>{bmiCategory.label}</span>
-                            </div>
-                          )}
+                    <div className="bmi-widget-body">
+                      <div className="bmi-direct-pair">
+                        <div className="input-group" style={{ flex: 1 }}>
+                          <label htmlFor="input-bmi">
+                            <span>Direct Body Mass Index (BMI)</span>
+                            <span className="input-micro-hint">Valid clinical range: 15.0 – 55.0 kg/m²</span>
+                          </label>
+                          <div className="input-with-suffix">
+                            <input
+                              id="input-bmi"
+                              type="number"
+                              step="0.1"
+                              min="15"
+                              max="55"
+                              placeholder="e.g. 24.0"
+                              value={formData.BMI || ''}
+                              onChange={(e) => updateField('BMI', parseFloat(e.target.value) || 20)}
+                            />
+                            <span className="input-suffix">kg/m²</span>
+                          </div>
                         </div>
-                        <span className="bmi-input-note">Standard clinical reference range: 15.0 – 55.0 kg/m²</span>
+                        {bmiCategory && (
+                          <div className="bmi-direct-chip-wrap">
+                            <span className={`bmi-status-chip ${bmiCategory.categoryClass}`}>
+                              <span className="chip-bullet" />
+                              <span>{bmiCategory.label}</span>
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
                 </div>
 
                 <div className="input-group">
-                  <label htmlFor="input-hr">Resting Heart Rate (bpm)</label>
-                  <input 
-                    id="input-hr"
-                    type="number" 
-                    min="40" 
-                    max="180" 
-                    value={formData.heartRate} 
-                    onChange={(e) => updateField('heartRate', parseFloat(e.target.value) || 70)} 
-                  />
-                </div>
-                <div className="biometric-context-card">
-                  <div className="biometric-context-title">
-                    <HeartPulse size={14} className="biometric-context-icon" />
-                    <span>Clinical Reference: Heart Rate</span>
+                  <label htmlFor="input-hr">
+                    <span>Resting Heart Rate</span>
+                    <span className="input-micro-hint">Normal resting: 60 – 100 bpm</span>
+                  </label>
+                  <div className="input-with-suffix">
+                    <input 
+                      id="input-hr"
+                      type="number" 
+                      min="40" 
+                      max="180" 
+                      value={formData.heartRate} 
+                      onChange={(e) => updateField('heartRate', parseFloat(e.target.value) || 70)} 
+                    />
+                    <span className="input-suffix">bpm</span>
                   </div>
-                  <p className="biometric-context-desc">
-                    Typical adult resting pulse ranges from <strong>60 – 100 bpm</strong>. Rates below 60 bpm may indicate athletic conditioning or sinus bradycardia.
-                  </p>
                 </div>
               </div>
             </div>
@@ -488,48 +464,75 @@ export default function RiskAssessment({
               <h2 className="step-title"><Activity size={24} className="step-icon" /> Step 2: Blood Pressure &amp; Labs</h2>
               <div className="input-grid">
                 <div className="input-group">
-                  <label htmlFor="input-sysbp">Systolic Blood Pressure (sysBP, mmHg)</label>
-                  <input 
-                    id="input-sysbp"
-                    type="number" 
-                    min="70" 
-                    max="295" 
-                    value={formData.sysBP} 
-                    onChange={(e) => updateField('sysBP', parseFloat(e.target.value) || 120)} 
-                  />
+                  <label htmlFor="input-sysbp">
+                    <span>Systolic Blood Pressure (sysBP)</span>
+                    <span className="input-micro-hint">Normal: 90 – 120 mmHg (Elevated: ≥130)</span>
+                  </label>
+                  <div className="input-with-suffix">
+                    <input 
+                      id="input-sysbp"
+                      type="number" 
+                      min="70" 
+                      max="295" 
+                      value={formData.sysBP} 
+                      onChange={(e) => updateField('sysBP', parseFloat(e.target.value) || 120)} 
+                    />
+                    <span className="input-suffix">mmHg</span>
+                  </div>
                 </div>
+
                 <div className="input-group">
-                  <label htmlFor="input-diabp">Diastolic Blood Pressure (diaBP, mmHg)</label>
-                  <input 
-                    id="input-diabp"
-                    type="number" 
-                    min="40" 
-                    max="160" 
-                    value={formData.diaBP} 
-                    onChange={(e) => updateField('diaBP', parseFloat(e.target.value) || 80)} 
-                  />
+                  <label htmlFor="input-diabp">
+                    <span>Diastolic Blood Pressure (diaBP)</span>
+                    <span className="input-micro-hint">Normal: 60 – 80 mmHg (Stage 1: ≥80)</span>
+                  </label>
+                  <div className="input-with-suffix">
+                    <input 
+                      id="input-diabp"
+                      type="number" 
+                      min="40" 
+                      max="160" 
+                      value={formData.diaBP} 
+                      onChange={(e) => updateField('diaBP', parseFloat(e.target.value) || 80)} 
+                    />
+                    <span className="input-suffix">mmHg</span>
+                  </div>
                 </div>
+
                 <div className="input-group">
-                  <label htmlFor="input-chol">Total Serum Cholesterol (totChol, mg/dL)</label>
-                  <input 
-                    id="input-chol"
-                    type="number" 
-                    min="100" 
-                    max="600" 
-                    value={formData.totChol} 
-                    onChange={(e) => updateField('totChol', parseFloat(e.target.value) || 180)} 
-                  />
+                  <label htmlFor="input-chol">
+                    <span>Total Serum Cholesterol (totChol)</span>
+                    <span className="input-micro-hint">Desirable: &lt; 200 mg/dL (Borderline: 200 – 239)</span>
+                  </label>
+                  <div className="input-with-suffix">
+                    <input 
+                      id="input-chol"
+                      type="number" 
+                      min="100" 
+                      max="600" 
+                      value={formData.totChol} 
+                      onChange={(e) => updateField('totChol', parseFloat(e.target.value) || 180)} 
+                    />
+                    <span className="input-suffix">mg/dL</span>
+                  </div>
                 </div>
+
                 <div className="input-group">
-                  <label htmlFor="input-glucose">Fasting Blood Glucose (glucose, mg/dL)</label>
-                  <input 
-                    id="input-glucose"
-                    type="number" 
-                    min="40" 
-                    max="400" 
-                    value={formData.glucose} 
-                    onChange={(e) => updateField('glucose', parseFloat(e.target.value) || 90)} 
-                  />
+                  <label htmlFor="input-glucose">
+                    <span>Fasting Blood Glucose (glucose)</span>
+                    <span className="input-micro-hint">Normal fasting: 70 – 99 mg/dL (Impaired: 100 – 125)</span>
+                  </label>
+                  <div className="input-with-suffix">
+                    <input 
+                      id="input-glucose"
+                      type="number" 
+                      min="40" 
+                      max="400" 
+                      value={formData.glucose} 
+                      onChange={(e) => updateField('glucose', parseFloat(e.target.value) || 90)} 
+                    />
+                    <span className="input-suffix">mg/dL</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -552,16 +555,22 @@ export default function RiskAssessment({
                   </select>
                 </div>
                 <div className="input-group">
-                  <label htmlFor="input-cigs">Cigarettes Smoked / Day</label>
-                  <input 
-                    id="input-cigs"
-                    type="number" 
-                    min="0" 
-                    max="70" 
-                    disabled={formData.currentSmoker === 0}
-                    value={formData.cigsPerDay} 
-                    onChange={(e) => updateField('cigsPerDay', parseFloat(e.target.value) || 0)} 
-                  />
+                  <label htmlFor="input-cigs">
+                    <span>Cigarettes Smoked / Day</span>
+                    <span className="input-micro-hint">Average daily quantity</span>
+                  </label>
+                  <div className="input-with-suffix">
+                    <input 
+                      id="input-cigs"
+                      type="number" 
+                      min="0" 
+                      max="70" 
+                      disabled={formData.currentSmoker === 0}
+                      value={formData.cigsPerDay} 
+                      onChange={(e) => updateField('cigsPerDay', parseFloat(e.target.value) || 0)} 
+                    />
+                    <span className="input-suffix">cigs/day</span>
+                  </div>
                 </div>
                 <div className="input-group">
                   <label htmlFor="input-bpmeds">Blood Pressure Medication</label>
