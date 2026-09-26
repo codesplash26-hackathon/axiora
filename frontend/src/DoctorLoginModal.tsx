@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Stethoscope, Mail, Lock, ArrowRight, Zap, Building2, AlertCircle, Loader2 } from 'lucide-react';
 import './DoctorLoginModal.css';
 import { loginDoctor, registerDoctor } from './api';
@@ -19,6 +19,17 @@ export default function DoctorLoginModal({ isOpen, onClose, onLogin }: DoctorLog
   const [hospital, setHospital] = useState('Axiora Health Network');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isLoading) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isLoading, onClose]);
 
   if (!isOpen) return null;
 
@@ -85,9 +96,23 @@ export default function DoctorLoginModal({ isOpen, onClose, onLogin }: DoctorLog
   };
 
   return (
-    <div className="auth-overlay fade-in">
-      <div className="auth-modal fade-up">
-        <button className="auth-close" onClick={onClose} disabled={isLoading}>
+    <div
+      className="auth-overlay fade-in"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isLoading) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        className="auth-modal fade-up"
+        style={{
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          paddingBottom: '2rem',
+        }}
+      >
+        <button className="auth-close" onClick={onClose} disabled={isLoading} title="Close dialog">
           <X size={24} />
         </button>
 
