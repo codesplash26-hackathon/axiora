@@ -13,12 +13,15 @@ import {
   Clock,
   AlertTriangle,
   X,
-  UserPlus
+  UserPlus,
+  Home,
+  Pencil,
 } from 'lucide-react';
 import {
   getDoctorOverview,
   listPatients,
   createPatient,
+  updatePatient,
   getPatientHistory,
   assessDoctorPatient,
 } from './api';
@@ -34,6 +37,7 @@ interface DoctorDashboardPageProps {
   doctor: DoctorUser;
   token: string;
   onLogout: () => void;
+  onGoHome?: () => void;
   onNewAssessment: () => void;
   onViewAssessmentResult?: (assessment: AssessmentResponse) => void;
   onAssessPatient?: (patient: PatientRecord) => void;
@@ -43,6 +47,7 @@ export default function DoctorDashboardPage({
   doctor,
   token,
   onLogout,
+  onGoHome,
   onNewAssessment,
   onViewAssessmentResult,
   onAssessPatient,
@@ -80,6 +85,50 @@ export default function DoctorDashboardPage({
   // History Drawer State
   const [selectedHistory, setSelectedHistory] = useState<PatientHistory | null>(null);
   const [historyPatientName, setHistoryPatientName] = useState('');
+
+  // Edit Patient State
+  const [editingPatient, setEditingPatient] = useState<PatientRecord | null>(null);
+  const [editFullName, setEditFullName] = useState('');
+  const [editAge, setEditAge] = useState(55);
+  const [editSex, setEditSex] = useState('Female');
+  const [editPhone, setEditPhone] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editErrorMessage, setEditErrorMessage] = useState<string | null>(null);
+
+  const handleOpenEdit = (pt: PatientRecord) => {
+    setEditingPatient(pt);
+    setEditFullName(pt.fullName || '');
+    setEditAge(pt.age || 50);
+    setEditSex(pt.sex || 'Female');
+    setEditPhone(pt.contactPhone || '');
+    setEditErrorMessage(null);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPatient) return;
+    if (!editFullName.trim()) {
+      setEditErrorMessage('Patient full name is required.');
+      return;
+    }
+
+    setIsSavingEdit(true);
+    setEditErrorMessage(null);
+    try {
+      await updatePatient(token, editingPatient.patientId, {
+        fullName: editFullName.trim(),
+        age: Number(editAge),
+        sex: editSex,
+        contactPhone: editPhone.trim(),
+      });
+      setEditingPatient(null);
+      await loadDashboardData();
+    } catch (err: unknown) {
+      setEditErrorMessage(err instanceof Error ? err.message : 'Failed to update patient demographics.');
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
 
   // Fetch live overview and patients list
   const loadDashboardData = async () => {
@@ -237,7 +286,11 @@ export default function DoctorDashboardPage({
     <div className="doctor-dashboard-container">
       {/* Doctor Navbar */}
       <nav className="doctor-navbar">
-        <div className="doctor-nav-brand">
+        <div
+          className={`doctor-nav-brand ${onGoHome ? 'clickable' : ''}`}
+          onClick={onGoHome}
+          title={onGoHome ? 'Return to Home / Overview' : undefined}
+        >
           <Heart size={24} color="#38bdf8" />
           <span>
             CardioRecourse{' '}
@@ -247,6 +300,15 @@ export default function DoctorDashboardPage({
           </span>
         </div>
         <div className="doctor-nav-user">
+          {onGoHome && (
+            <button
+              className="btn-doctor-nav"
+              onClick={onGoHome}
+              title="Return to Home / Overview without signing out"
+            >
+              <Home size={16} /> Home / Overview
+            </button>
+          )}
           <div className="doctor-user-info">
             <Stethoscope size={18} color="#38bdf8" />
             <span>{doctor.fullName || `Dr. ${doctor.email}`}</span>
@@ -446,6 +508,14 @@ export default function DoctorDashboardPage({
                             title="Open 14-Factor Clinical Assessment Wizard"
                           >
                             Assess
+                          </button>
+                          <button
+                            className="btn-action"
+                            style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
+                            onClick={() => handleOpenEdit(pt)}
+                            title="Edit Patient Demographics"
+                          >
+                            <Pencil size={13} style={{ verticalAlign: 'middle', marginRight: '0.2rem' }} /> Edit
                           </button>
                           <button
                             className="btn-action"
@@ -781,6 +851,102 @@ export default function DoctorDashboardPage({
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Patient Demographics */}
+      {editingPatient && (
+        <div className="modal-overlay fade-in">
+          <div className="modal-card fade-up">
+            <div className="modal-header">
+              <div>
+                <h2>Edit Patient Demographics</h2>
+                <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+                  ID: <strong style={{ color: '#0ea5e9' }}>{editingPatient.patientId}</strong>
+                </p>
+              </div>
+              <button className="modal-close-btn" onClick={() => setEditingPatient(null)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {editErrorMessage && (
+              <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                <AlertTriangle size={16} />
+                <span>{editErrorMessage}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEdit}>
+              <div className="modal-form-grid">
+                <div className="form-group-full">
+                  <label className="form-input-label">Patient Full Name</label>
+                  <input
+                    type="text"
+                    className="form-input-control"
+                    placeholder="e.g. Anura Perera"
+                    value={editFullName}
+                    onChange={(e) => setEditFullName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="form-input-label">Chronological Age</label>
+                  <input
+                    type="number"
+                    className="form-input-control"
+                    min={18}
+                    max={120}
+                    value={editAge}
+                    onChange={(e) => setEditAge(Number(e.target.value))}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="form-input-label">Biological Sex</label>
+                  <select
+                    className="form-input-control"
+                    value={editSex}
+                    onChange={(e) => setEditSex(e.target.value)}
+                  >
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                  </select>
+                </div>
+
+                <div className="form-group-full">
+                  <label className="form-input-label">Contact Phone</label>
+                  <input
+                    type="tel"
+                    className="form-input-control"
+                    placeholder="+94 77 123 4567"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  className="btn-action"
+                  onClick={() => setEditingPatient(null)}
+                  disabled={isSavingEdit}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-action primary"
+                  disabled={isSavingEdit}
+                >
+                  {isSavingEdit ? 'Saving...' : 'Save Demographics'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

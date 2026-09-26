@@ -24,6 +24,38 @@
   font-weight: 700;
   font-size: 1.25rem;
   color: #38bdf8;
+  user-select: none;
+}
+
+.doctor-nav-brand.clickable {
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.doctor-nav-brand.clickable:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-doctor-nav {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f8fafc;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+}
+
+.btn-doctor-nav:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
 }
 
 .doctor-nav-user {
