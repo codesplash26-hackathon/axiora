@@ -1,4 +1,3 @@
-Set-Content -Path .gitignore -Value @"
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -44,6 +43,9 @@ htmlcov/
 # Environments & Local Secrets
 .env
 .env.local
+serviceAccountKey.json
+*.serviceAccountKey.json
+credentials.json
 
 # IDEs & Editors
 .vscode/
@@ -59,4 +61,7 @@ Desktop.ini
 
 # Temporary runtime logs
 *.log
-"@
+
+# Frontend build & dependencies
+frontend/node_modules/
+frontend/dist/
