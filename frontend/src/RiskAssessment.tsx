@@ -1,12 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './RiskAssessment.css';
-import { ArrowLeft, User, Activity, HeartPulse, ChevronRight, ActivitySquare, AlertCircle } from 'lucide-react';
+import { ArrowLeft, User, Activity, HeartPulse, ChevronRight, ActivitySquare, AlertCircle, Stethoscope } from 'lucide-react';
 import type { PatientInput } from './api';
 
 interface RiskAssessmentProps {
   onBack: () => void;
   onAnalyze: (patient: PatientInput) => void;
   isLoading?: boolean;
+  initialValues?: Partial<PatientInput>;
+  lockedFields?: (keyof PatientInput)[];
+  patientHeader?: {
+    patientId: string;
+    fullName?: string;
+  };
 }
 
 const steps = [
@@ -15,10 +21,17 @@ const steps = [
   { id: 3, title: 'Medical & Lifestyle' }
 ];
 
-export default function RiskAssessment({ onBack, onAnalyze, isLoading }: RiskAssessmentProps) {
+export default function RiskAssessment({
+  onBack,
+  onAnalyze,
+  isLoading,
+  initialValues,
+  lockedFields,
+  patientHeader,
+}: RiskAssessmentProps) {
   const [currentStep, setCurrentStep] = useState(1);
 
-  const [formData, setFormData] = useState<PatientInput>({
+  const [formData, setFormData] = useState<PatientInput>(() => ({
     male: 1,
     age: 52,
     currentSmoker: 1,
@@ -33,7 +46,17 @@ export default function RiskAssessment({ onBack, onAnalyze, isLoading }: RiskAss
     BMI: 28.4,
     heartRate: 76,
     glucose: 96,
-  });
+    ...(initialValues || {}),
+  }));
+
+  useEffect(() => {
+    if (initialValues) {
+      setFormData((prev) => ({
+        ...prev,
+        ...initialValues,
+      }));
+    }
+  }, [initialValues]);
 
   const updateField = <K extends keyof PatientInput>(key: K, value: PatientInput[K]) => {
     setFormData((prev) => {
@@ -115,13 +138,34 @@ export default function RiskAssessment({ onBack, onAnalyze, isLoading }: RiskAss
       {/* Navigation Bar */}
       <nav className="assessment-nav">
         <button type="button" className="btn-back" onClick={onBack}>
-          <ArrowLeft size={20} /> Back to Home
+          <ArrowLeft size={20} /> {patientHeader ? 'Back to Patient Roster' : 'Back to Home'}
         </button>
         <div className="nav-brand">CardioRecourse</div>
       </nav>
 
       {/* Main Content Area */}
       <main className="assessment-main">
+        {patientHeader && (
+          <div className="patient-assessment-badge" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            background: '#f0f9ff',
+            border: '1px solid #bae6fd',
+            padding: '0.75rem 1.25rem',
+            borderRadius: '0.75rem',
+            marginBottom: '1.5rem',
+          }}>
+            <Stethoscope size={20} color="#0284c7" />
+            <span style={{ color: '#0369a1', fontWeight: 600 }}>
+              Assessing Patient: <strong>{patientHeader.fullName || 'Patient'}</strong> ({patientHeader.patientId})
+            </span>
+            <span style={{ fontSize: '0.8rem', color: '#0284c7', background: '#e0f2fe', padding: '0.2rem 0.6rem', borderRadius: '9999px', marginLeft: 'auto' }}>
+              Demographics Locked
+            </span>
+          </div>
+        )}
+
         <div className="assessment-header">
           <h1 className="assessment-title shiny-heading-text">Clinical Risk Assessment</h1>
           <p className="assessment-subtitle">
@@ -160,21 +204,29 @@ export default function RiskAssessment({ onBack, onAnalyze, isLoading }: RiskAss
               <h2 className="step-title"><User size={24} className="step-icon" /> Step 1: Personal &amp; Biometrics</h2>
               <div className="input-grid">
                 <div className="input-group">
-                  <label htmlFor="input-age">Age (years)</label>
+                  <label htmlFor="input-age">
+                    Age (years) {lockedFields?.includes('age') && <span style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 400 }}>(Locked)</span>}
+                  </label>
                   <input 
                     id="input-age"
                     type="number" 
                     min="18" 
                     max="120" 
                     value={formData.age} 
+                    disabled={lockedFields?.includes('age')}
+                    style={lockedFields?.includes('age') ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : undefined}
                     onChange={(e) => updateField('age', parseFloat(e.target.value) || 18)} 
                   />
                 </div>
                 <div className="input-group">
-                  <label htmlFor="input-sex">Biological Sex</label>
+                  <label htmlFor="input-sex">
+                    Biological Sex {lockedFields?.includes('male') && <span style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 400 }}>(Locked)</span>}
+                  </label>
                   <select 
                     id="input-sex"
                     value={formData.male} 
+                    disabled={lockedFields?.includes('male')}
+                    style={lockedFields?.includes('male') ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#64748b' } : undefined}
                     onChange={(e) => updateField('male', parseInt(e.target.value, 10))}
                   >
                     <option value={1}>Male</option>
