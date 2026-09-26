@@ -108,38 +108,60 @@ Open your browser at: `http://localhost:5173` (or `http://localhost:5174` as dis
 
 ```mermaid
 graph TD
-    subgraph UI ["Client Presentation Layer (React 19 + TypeScript + Nginx)"]
-        Landing["Landing Page<br/>(Overview & Tri-Pillars)"]
-        Wizard["Risk Assessment Wizard<br/>(Biometrics & Labs)"]
-        Results["Diagnostic Dashboard<br/>(Risk Gauge & SHAP Waterfall)"]
-        Recourse["Healthier Tomorrow<br/>(Counterfactual Pathway Switcher)"]
+    subgraph UI ["1. Presentation Layer (React 19 + TypeScript + Vite / Nginx)"]
+        Landing["Landing Page<br/>(Tri-Pillar Overview)"]
+        Wizard["Risk Assessment Wizard<br/>(Biometrics & Labs + BMI Auto-Calc)"]
+        Results["Diagnostic Dashboard<br/>(Calibrated Risk Gauge & SHAP Waterfall)"]
+        Recourse["Healthier Tomorrow<br/>(Interactive Counterfactual Pathways)"]
+        Portal["Doctor Surveillance Portal<br/>(Patient Registry & Longitudinal Drawer)"]
     end
 
-    subgraph API ["FastAPI Microservice Layer (Port 8000)"]
+    subgraph API ["2. Security & Microservice Gateway (FastAPI)"]
+        Nginx["Nginx Reverse Proxy / CORS Gateway"]
         PrivacyEdge["HIPAA Safe Harbor & SL PDPA<br/>De-identification Middleware"]
-        Router["API Router<br/>(/assess, /predict, /explain, /recourse, /fhir)"]
+        Router["API Router & Pydantic v2 Contracts<br/>(/assess, /predict, /explain, /recourse, /doctor, /fhir)"]
+    end
+
+    subgraph Concurrency ["3. Concurrency & Orchestration Layer"]
+        Gather["asyncio.gather Parallel Dispatch<br/>(Sub-1.4s SLA Timeout Watchdog)"]
         Pool["ProcessPoolExecutor Concurrency Manager<br/>(CPU-Pinned Workers, OMP_NUM_THREADS=1)"]
     end
 
-    subgraph ML ["Clinical ML & Explainability Pipeline"]
-        XGB["Calibrated XGBoost Classifier<br/>(Brier Score < 0.12)"]
-        SHAP["SHAP TreeExplainer<br/>(Local Shapley Margins)"]
+    subgraph ML ["4. Clinical ML & Explainability Pipeline"]
+        XGB["Calibrated XGBoost Classifier<br/>(Brier Score < 0.12, Platt Scaling)"]
+        SHAP["SHAP TreeExplainer<br/>(Log-Odds Margins & Marginal Risk %)"]
         DiCE["DiCE Counterfactual Engine<br/>(Constrained Search & Hyperplane Fallback)"]
+        FHIR["HL7® FHIR® R4 Resource Builder<br/>(RiskAssessment & LOINC Observations)"]
     end
 
-    Landing --> Wizard --> Router
-    Results --> Recourse --> Router
-    Router --> PrivacyEdge --> Pool
+    Landing --> Wizard
+    Wizard -->|POST /api/assess| Nginx
+    Portal -->|GET /api/doctor/*| Nginx
+    Nginx --> PrivacyEdge
+    PrivacyEdge --> Router
+    Router -->|14-Biomarker Payload| Gather
+    Gather --> Pool
     Pool --> XGB
     Pool --> SHAP
     Pool --> DiCE
+    Router --> FHIR
+
+    XGB -.->|Calibrated 10-Yr Probability| Results
+    SHAP -.->|Local Shapley Attributions| Results
+    DiCE -.->|Feasible Action Pathways| Recourse
+    Results --> Recourse
+    FHIR -.->|FHIR R4 Diagnostic Bundle| Portal
 ```
+
+The system operates across four decoupled layers:
+1. **Client Presentation**: React 19 SPA offering the 3-step risk assessment wizard, SHAP risk waterfalls, interactive counterfactual pathway selection, and doctor surveillance dashboard.
+2. **Security & Gateway**: Nginx reverse proxy routes `/api/` traffic to FastAPI. The `PrivacySanitizationMiddleware` scrubs direct patient identifiers at the edge under HIPAA Safe Harbor and Sri Lanka PDPA guidelines before Pydantic v2 validates numerical biomarker bounds.
+3. **Concurrency & Orchestration**: Incoming `/assess` requests trigger non-blocking `asyncio.gather` parallel task execution across pre-warmed, CPU-pinned (`OMP_NUM_THREADS=1`) `ProcessPoolExecutor` workers, enforcing a sub-1.4-second response SLA.
+4. **Clinical ML & Explainability**: Concurrently executes Platt-calibrated XGBoost risk stratification, polynomial-time TreeSHAP margin attribution, and constrained DiCE counterfactual search (with deterministic hyperplane fallback), generating native HL7® FHIR® R4 bundles for EHR interoperability.
 
 ---
 
 ## 5. Technology Stack & Architectural Justifications
-
-In compliance with **Section II.B** of the project submission guidelines, key technology choices are justified below:
 
 | Layer / Component | Technology | Clinical & Engineering Justification |
 | :--- | :--- | :--- |
