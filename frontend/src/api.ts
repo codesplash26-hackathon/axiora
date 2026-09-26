@@ -136,6 +136,7 @@ export interface DoctorOverview {
   highRiskCount: number;
   borderlineCount: number;
   lowRiskCount: number;
+  notAssessedCount?: number;
 }
 
 export interface PatientRecord {
@@ -146,8 +147,8 @@ export interface PatientRecord {
   sex: string;
   contactPhone: string;
   baselineBiomarkers: Partial<PatientInput>;
-  latestRiskScore: number;
-  latestRiskPercentage: number;
+  latestRiskScore: number | null;
+  latestRiskPercentage: number | null;
   latestRiskBand: string;
   createdAt: string;
   updatedAt: string;
