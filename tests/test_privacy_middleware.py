@@ -149,3 +149,25 @@ def test_privacy_middleware_fail_closed_on_malformed_json():
         )
         assert response.status_code == 400
         assert "Bad Request" in response.text
+
+
+def test_privacy_middleware_purges_phi_in_nested_arrays():
+    """
+    Security Test:
+    Arrays containing identifying strings (emails, phone numbers) or sub-dictionaries
+    with PHI keys must have those identifiers purged recursively.
+    """
+    payload_with_array_phi = VALID_PATIENT_PAYLOAD.copy()
+    payload_with_array_phi["consultation_history"] = [
+        "Routine checkup",
+        "doctor@cardio-unit.org",
+        "0781188111",
+        {"physician": "Dr. Perera", "facility": "General Hospital"}
+    ]
+
+    with TestClient(app) as client:
+        response = client.post("/explain", json=payload_with_array_phi)
+        assert response.status_code == 200
+        purged = int(response.headers.get("x-phi-purged-count", 0))
+        assert purged >= 2, f"Expected array PHI to be purged, got {purged}"
+
