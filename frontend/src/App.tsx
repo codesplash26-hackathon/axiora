@@ -9,8 +9,8 @@ import RecoursePage from './RecoursePage';
 import DoctorLoginModal from './DoctorLoginModal';
 import DoctorDashboardPage from './DoctorDashboardPage';
 import HealthierTomorrows from './HealthierTomorrows';
-import { assessPatient } from './api';
-import type { PatientInput, AssessmentResponse } from './api';
+import { assessPatient, logoutDoctor } from './api';
+import type { PatientInput, AssessmentResponse, DoctorUser } from './api';
 
 const App = () => {
   const [mounted, setMounted] = useState(false);
@@ -18,11 +18,26 @@ const App = () => {
   const [assessmentData, setAssessmentData] = useState<AssessmentResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [doctorUser, setDoctorUser] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [doctorUser, setDoctorUser] = useState<DoctorUser | null>(null);
+  const [doctorToken, setDoctorToken] = useState<string | null>(null);
   const [isDoctorLoginOpen, setIsDoctorLoginOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    try {
+      const savedDoc = sessionStorage.getItem('cardiorecourse_doctor');
+      const savedToken = sessionStorage.getItem('cardiorecourse_token');
+      if (savedDoc && savedToken) {
+        setDoctorUser(JSON.parse(savedDoc));
+        setDoctorToken(savedToken);
+      }
+      const savedAssessment = sessionStorage.getItem('cardiorecourse_assessment');
+      if (savedAssessment) {
+        setAssessmentData(JSON.parse(savedAssessment));
+      }
+    } catch {
+      // Storage read error ignored
+    }
   }, []);
 
   const handleAnalyzePatient = async (patient: PatientInput) => {
@@ -31,6 +46,7 @@ const App = () => {
     try {
       const response = await assessPatient(patient);
       setAssessmentData(response);
+      sessionStorage.setItem('cardiorecourse_assessment', JSON.stringify(response));
       setCurrentPage('prediction');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to reach clinical decision engine';
@@ -42,7 +58,19 @@ const App = () => {
 
   const handleReset = () => {
     setAssessmentData(null);
+    sessionStorage.removeItem('cardiorecourse_assessment');
     setErrorMessage(null);
+    setCurrentPage('landing');
+  };
+
+  const handleDoctorLogout = async () => {
+    if (doctorToken) {
+      await logoutDoctor(doctorToken);
+    }
+    setDoctorUser(null);
+    setDoctorToken(null);
+    sessionStorage.removeItem('cardiorecourse_doctor');
+    sessionStorage.removeItem('cardiorecourse_token');
     setCurrentPage('landing');
   };
 
@@ -131,8 +159,11 @@ const App = () => {
       <DoctorLoginModal 
         isOpen={isDoctorLoginOpen} 
         onClose={() => setIsDoctorLoginOpen(false)} 
-        onLogin={(doc) => {
+        onLogin={(doc, token) => {
           setDoctorUser(doc);
+          setDoctorToken(token);
+          sessionStorage.setItem('cardiorecourse_doctor', JSON.stringify(doc));
+          sessionStorage.setItem('cardiorecourse_token', token);
           setCurrentPage('doctor-dashboard');
         }}
       />
@@ -210,9 +241,9 @@ const App = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a', fontWeight: 600 }}>
                     <Stethoscope size={18} color="#0284c7" />
-                    <span>{doctorUser.name}</span>
+                    <span>{doctorUser.fullName || doctorUser.email}</span>
                   </div>
-                  <button className="btn-login" onClick={() => { setDoctorUser(null); setCurrentPage('landing'); }}>Sign Out</button>
+                  <button className="btn-login" onClick={handleDoctorLogout}>Sign Out</button>
                   <button className="btn-signup" onClick={() => setCurrentPage('doctor-dashboard')}>Dashboard</button>
                 </div>
               ) : (
@@ -418,14 +449,21 @@ const App = () => {
         />
       ) : currentPage === 'tomorrows' ? (
         <HealthierTomorrows
+          recourse={assessmentData?.recourse}
           onBack={() => setCurrentPage('recourse')}
           onHome={handleReset}
         />
       ) : currentPage === 'doctor-dashboard' && doctorUser ? (
         <DoctorDashboardPage 
           doctor={doctorUser} 
-          onLogout={() => { setDoctorUser(null); setCurrentPage('landing'); }}
+          token={doctorToken || ''}
+          onLogout={handleDoctorLogout}
           onNewAssessment={() => setCurrentPage('assessment')}
+          onViewAssessmentResult={(res) => {
+            setAssessmentData(res);
+            sessionStorage.setItem('cardiorecourse_assessment', JSON.stringify(res));
+            setCurrentPage('prediction');
+          }}
         />
       ) : (
         <RiskAssessment 
