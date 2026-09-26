@@ -45,15 +45,19 @@ class PredictionResponse(BaseModel):
 class FeatureAttribution(BaseModel):
     feature: str = Field(..., description="Raw column name (e.g., sysBP)")
     display_name: str = Field(..., description="Plain-language clinical label")
-    attribution_value: float = Field(..., description="SHAP attribution value (positive or negative)")
+    attribution_value: float = Field(..., description="SHAP attribution value (positive or negative log-odds)")
     patient_value: float = Field(..., description="Patient baseline value for this feature")
     direction: Literal["risk_increasing", "protective"] = Field(..., description="Impact direction on risk")
+    marginal_percentage_impact: Optional[float] = Field(None, description="Estimated percentage point risk shift")
 
 
 class ExplanationResponse(BaseModel):
     base_value: float = Field(..., description="Population baseline expected risk")
     risk_score: float = Field(..., ge=0.0, le=1.0, description="Individual calibrated risk score")
     attributions: List[FeatureAttribution] = Field(..., description="Ranked feature attributions")
+    base_log_odds: Optional[float] = Field(None, description="Expected model log-odds margin baseline")
+    patient_log_odds: Optional[float] = Field(None, description="Total patient log-odds margin score")
+
 
 
 # ==========================================

@@ -115,16 +115,28 @@ def explain_patient(patient_dict: Dict[str, Any]) -> Dict[str, Any]:
     explanation = _explainer(patient_df, check_additivity=False)
     shap_vals = explanation.values[0]
 
+    base_log_odds = float(explanation.base_values[0]) if hasattr(explanation, "base_values") and hasattr(explanation.base_values, "__len__") and len(explanation.base_values) > 0 else -1.7277
+    patient_log_odds = base_log_odds + float(np.sum(shap_vals))
+
+    def _logistic(z: float) -> float:
+        return 1.0 / (1.0 + np.exp(-z))
+
+    prob_patient = _logistic(patient_log_odds)
+
     attributions = []
     for feat, shap_val in zip(FEATURE_ORDER, shap_vals):
         val = float(shap_val)
         direction = "risk_increasing" if val > 0 else "protective"
+        prob_without_feat = _logistic(patient_log_odds - val)
+        delta_p = (prob_patient - prob_without_feat) * 100.0
+
         attributions.append({
             "feature": feat,
             "display_name": FEATURE_DISPLAY_NAMES.get(feat, feat),
             "attribution_value": round(val, 4),
             "patient_value": round(float(input_row[feat]), 2),
-            "direction": direction
+            "direction": direction,
+            "marginal_percentage_impact": round(delta_p, 2),
         })
 
     # Rank descending by absolute attribution magnitude
@@ -133,8 +145,11 @@ def explain_patient(patient_dict: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "base_value": round(_base_population_risk, 4),
         "risk_score": round(calibrated_prob, 4),
-        "attributions": attributions
+        "attributions": attributions,
+        "base_log_odds": round(base_log_odds, 4),
+        "patient_log_odds": round(patient_log_odds, 4),
     }
+
 
 
 def explain_risk(patient_dict: Dict[str, Any]) -> Dict[str, Any]:

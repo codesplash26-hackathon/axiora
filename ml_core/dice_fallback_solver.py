@@ -133,17 +133,33 @@ def _vectorized_random_solver(
         # Fallback to lowest risk candidates if strict threshold not reached
         best_indices = np.argsort(probs)[:total_CFs]
     else:
-        # Distance-weighted selection: prioritize candidates with minimum number of changes
+        # Clinical Effort / Actionability Cost Weights:
+        # Reflects physiological and behavioral difficulty of adherence
+        ACTIONABILITY_COST_WEIGHTS = {
+            "BPMeds": 1.0,      # High adherence feasibility with medical prescription
+            "totChol": 1.5,     # Manageable via statin therapy
+            "sysBP": 2.0,       # Dietary sodium reduction + antihypertensives
+            "diaBP": 2.0,       # Hemodynamic stabilization
+            "heartRate": 2.5,   # Aerobic conditioning
+            "glucose": 3.0,     # Dietary glycemic control
+            "cigsPerDay": 3.5,  # Behavioral addiction barrier
+            "currentSmoker": 3.5,
+            "BMI": 5.0,         # High physical friction; sustainable weight loss takes months
+        }
+
+        # Distance-weighted selection: prioritize candidates with minimum clinical cost
         valid_indices = np.where(valid_mask)[0]
-        # Compute L1 distance normalized by feature range
+        # Compute cost-weighted L1 distance normalized by feature range
         diffs = np.abs(mat[valid_indices] - base_vals)
         for j, c in enumerate(cols):
             if c in actionable:
                 rng = max(1.0, float(boundaries[c]["max"]) - float(boundaries[c]["min"]))
-                diffs[:, j] /= rng
+                weight = ACTIONABILITY_COST_WEIGHTS.get(c, 1.0)
+                diffs[:, j] = (diffs[:, j] / rng) * weight
             else:
                 diffs[:, j] = 0.0
         distances = np.sum(diffs, axis=1)
+
 
         # Diverse selection: pick top candidates across different distances
         sorted_pos = np.argsort(distances)
