@@ -160,8 +160,12 @@ async def assess_doctor_patient(
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found or not assigned to your account.")
 
-    # Merge biomarkers: override payload values over stored baseline values
-    biomarkers = dict(patient.get("baselineBiomarkers", {}))
+    # Merge biomarkers: initialize with demographics from patient record
+    biomarkers = {
+        "age": patient.get("age"),
+        "male": 1 if str(patient.get("sex", "")).lower() == "male" else 0,
+    }
+    biomarkers.update(patient.get("baselineBiomarkers", {}))
     if payload and payload.biomarkers:
         biomarkers.update(payload.biomarkers)
 
