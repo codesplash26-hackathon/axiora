@@ -72,6 +72,60 @@ export interface AssessmentResponse {
   total_latency_ms: number;
 }
 
+/**
+ * Formats backend API error responses into clean, human-readable strings.
+ * Parses Pydantic 422 validation error arrays, e.g.:
+ * [{ loc: ["body", "sysBP"], msg: "Input should be greater than or equal to 70" }] -> "sysBP: Input should be greater than or equal to 70"
+ * Ensures raw objects or unhandled structures are never stringified to "[object Object]".
+ */
+export function formatApiErrorMessage(errorData: any, defaultMessage: string): string {
+  if (!errorData) return defaultMessage;
+
+  // Handle Pydantic 422 array format: detail = [{ loc: [...], msg: "..." }]
+  if (Array.isArray(errorData.detail)) {
+    const formatted = errorData.detail.map((err: any) => {
+      if (typeof err === 'string') return err;
+      if (err && typeof err === 'object') {
+        const field = Array.isArray(err.loc) && err.loc.length > 0
+          ? String(err.loc[err.loc.length - 1])
+          : null;
+        const msg = err.msg || 'Invalid input';
+        return field ? `${field}: ${msg}` : msg;
+      }
+      return String(err);
+    });
+    const result = formatted.filter(Boolean).join('; ');
+    if (result && result !== '[object Object]') return result;
+  }
+
+  // Handle standard string detail: detail = "Patient not found"
+  if (typeof errorData.detail === 'string' && errorData.detail.trim()) {
+    return errorData.detail.trim();
+  }
+
+  // Handle detail as an object: detail = { message: "..." }
+  if (errorData.detail && typeof errorData.detail === 'object') {
+    if (typeof errorData.detail.message === 'string') {
+      return errorData.detail.message;
+    }
+    if (typeof errorData.detail.msg === 'string') {
+      return errorData.detail.msg;
+    }
+    try {
+      return JSON.stringify(errorData.detail);
+    } catch {
+      return defaultMessage;
+    }
+  }
+
+  // Handle errorData.message: message = "..."
+  if (typeof errorData.message === 'string' && errorData.message.trim()) {
+    return errorData.message.trim();
+  }
+
+  return defaultMessage;
+}
+
 export async function assessPatient(
   payload: PatientInput,
   externalSignal?: AbortSignal
@@ -98,7 +152,7 @@ export async function assessPatient(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ detail: 'Network error' }));
-      throw new Error(errorData.detail || `Server error: ${response.status}`);
+      throw new Error(formatApiErrorMessage(errorData, `Server error: ${response.status}`));
     }
 
     return await response.json();
@@ -219,7 +273,7 @@ export async function loginDoctor(email: string, password: string): Promise<Doct
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ detail: 'Authentication failed' }));
-    throw new Error(errorData.detail || `Login error: ${response.status}`);
+    throw new Error(formatApiErrorMessage(errorData, `Login error: ${response.status}`));
   }
   return response.json();
 }
@@ -230,6 +284,7 @@ export async function registerDoctor(payload: {
   fullName: string;
   specialization?: string;
   hospital?: string;
+  createdAt?: string;
 }): Promise<DoctorAuthResponse> {
   const response = await fetch('/api/auth/doctor/register', {
     method: 'POST',
@@ -238,7 +293,7 @@ export async function registerDoctor(payload: {
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ detail: 'Registration failed' }));
-    throw new Error(errorData.detail || `Registration error: ${response.status}`);
+    throw new Error(formatApiErrorMessage(errorData, `Registration error: ${response.status}`));
   }
   return response.json();
 }
@@ -262,7 +317,8 @@ export async function getDoctorOverview(token: string): Promise<DoctorOverview> 
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {
-    throw new Error('Failed to retrieve clinical overview');
+    const errorData = await response.json().catch(() => ({ detail: 'Failed to retrieve clinical overview' }));
+    throw new Error(formatApiErrorMessage(errorData, 'Failed to retrieve clinical overview'));
   }
   return response.json();
 }
@@ -281,7 +337,8 @@ export async function listPatients(
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {
-    throw new Error('Failed to retrieve patient registry');
+    const errorData = await response.json().catch(() => ({ detail: 'Failed to retrieve patient registry' }));
+    throw new Error(formatApiErrorMessage(errorData, 'Failed to retrieve patient registry'));
   }
   return response.json();
 }
@@ -300,7 +357,7 @@ export async function createPatient(
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ detail: 'Failed to create patient' }));
-    throw new Error(errorData.detail || 'Failed to create patient');
+    throw new Error(formatApiErrorMessage(errorData, 'Failed to create patient'));
   }
   return response.json();
 }
@@ -320,7 +377,7 @@ export async function updatePatient(
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ detail: 'Failed to update patient record' }));
-    throw new Error(errorData.detail || 'Failed to update patient record');
+    throw new Error(formatApiErrorMessage(errorData, 'Failed to update patient record'));
   }
   return response.json();
 }
@@ -330,7 +387,8 @@ export async function getPatientHistory(token: string, patientId: string): Promi
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {
-    throw new Error('Failed to retrieve patient clinical timeline');
+    const errorData = await response.json().catch(() => ({ detail: 'Failed to retrieve patient clinical timeline' }));
+    throw new Error(formatApiErrorMessage(errorData, 'Failed to retrieve patient clinical timeline'));
   }
   return response.json();
 }
@@ -350,7 +408,7 @@ export async function assessDoctorPatient(
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ detail: 'Clinical assessment failed' }));
-    throw new Error(errorData.detail || 'Clinical assessment failed');
+    throw new Error(formatApiErrorMessage(errorData, 'Clinical assessment failed'));
   }
   return response.json();
 }
@@ -379,7 +437,7 @@ export async function saveDoctorActionPlan(
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ detail: 'Failed to save action plan' }));
-    throw new Error(errorData.detail || 'Failed to save action plan');
+    throw new Error(formatApiErrorMessage(errorData, 'Failed to save action plan'));
   }
   return response.json();
 }

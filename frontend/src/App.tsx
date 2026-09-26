@@ -56,7 +56,17 @@ const App = () => {
       sessionStorage.setItem('cardiorecourse_assessment', JSON.stringify(response));
       setCurrentPage('prediction');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to reach clinical decision engine';
+      let msg = 'Failed to reach clinical decision engine';
+      if (err instanceof Error) {
+        msg = err.message;
+      } else if (typeof err === 'string') {
+        msg = err;
+      } else if (err && typeof err === 'object') {
+        msg = (err as any).message || (err as any).detail || 'Assessment request failed';
+      }
+      if (typeof msg !== 'string' || msg === '[object Object]' || !msg.trim()) {
+        msg = 'Invalid input parameters or inference request failed';
+      }
       setErrorMessage(msg);
     } finally {
       setIsLoading(false);
