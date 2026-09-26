@@ -36,6 +36,7 @@ interface DoctorDashboardPageProps {
   onLogout: () => void;
   onNewAssessment: () => void;
   onViewAssessmentResult?: (assessment: AssessmentResponse) => void;
+  onAssessPatient?: (patient: PatientRecord) => void;
 }
 
 export default function DoctorDashboardPage({
@@ -44,6 +45,7 @@ export default function DoctorDashboardPage({
   onLogout,
   onNewAssessment,
   onViewAssessmentResult,
+  onAssessPatient,
 }: DoctorDashboardPageProps) {
   const [overview, setOverview] = useState<DoctorOverview | null>(null);
   const [patients, setPatients] = useState<PatientRecord[]>([]);
@@ -58,6 +60,21 @@ export default function DoctorDashboardPage({
   const [newPtAge, setNewPtAge] = useState(55);
   const [newPtSex, setNewPtSex] = useState('Female');
   const [newPtPhone, setNewPtPhone] = useState('');
+  const [enterVitalsNow, setEnterVitalsNow] = useState(false);
+  const [initialBiomarkers, setInitialBiomarkers] = useState({
+    sysBP: 130,
+    diaBP: 85,
+    totChol: 210,
+    glucose: 90,
+    BMI: 26.0,
+    heartRate: 72,
+    currentSmoker: 0,
+    cigsPerDay: 0,
+    BPMeds: 0,
+    diabetes: 0,
+    prevalentHyp: 0,
+    prevalentStroke: 0,
+  });
   const [isSubmittingPt, setIsSubmittingPt] = useState(false);
 
   // History Drawer State
@@ -96,39 +113,92 @@ export default function DoctorDashboardPage({
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
+  const updateInitialBiomarker = <K extends keyof typeof initialBiomarkers>(
+    key: K,
+    val: typeof initialBiomarkers[K]
+  ) => {
+    setInitialBiomarkers((prev) => {
+      const updated = { ...prev, [key]: val };
+      if (key === 'currentSmoker') {
+        if (val === 0) updated.cigsPerDay = 0;
+        else if (val === 1 && prev.cigsPerDay === 0) updated.cigsPerDay = 10;
+      } else if (key === 'cigsPerDay') {
+        const cigs = Number(val);
+        if (cigs <= 0) {
+          updated.currentSmoker = 0;
+          updated.cigsPerDay = 0;
+        } else {
+          updated.currentSmoker = 1;
+          updated.cigsPerDay = cigs;
+        }
+      }
+      return updated;
+    });
+  };
+
+  const resetRegistrationForm = () => {
+    setNewPtName('');
+    setNewPtAge(55);
+    setNewPtSex('Female');
+    setNewPtPhone('');
+    setEnterVitalsNow(false);
+    setInitialBiomarkers({
+      sysBP: 130,
+      diaBP: 85,
+      totChol: 210,
+      glucose: 90,
+      BMI: 26.0,
+      heartRate: 72,
+      currentSmoker: 0,
+      cigsPerDay: 0,
+      BPMeds: 0,
+      diabetes: 0,
+      prevalentHyp: 0,
+      prevalentStroke: 0,
+    });
+  };
+
   const handleRegisterPatient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPtName.trim()) return;
 
     setIsSubmittingPt(true);
     try {
-      await createPatient(token, {
-        fullName: newPtName.trim(),
-        age: Number(newPtAge),
-        sex: newPtSex,
-        contactPhone: newPtPhone.trim(),
-        baselineBiomarkers: {
+      if (!enterVitalsNow) {
+        // Register without initial assessment: no fake or random risk scores injected
+        await createPatient(token, {
+          fullName: newPtName.trim(),
+          age: Number(newPtAge),
+          sex: newPtSex,
+          contactPhone: newPtPhone.trim(),
+          baselineBiomarkers: {},
+        });
+        setIsRegisterOpen(false);
+        resetRegistrationForm();
+        await loadDashboardData();
+      } else {
+        // Register and immediately compute real ML inference
+        const fullBiomarkers = {
           male: newPtSex === 'Male' ? 1 : 0,
           age: Number(newPtAge),
-          currentSmoker: 0,
-          cigsPerDay: 0,
-          BPMeds: 0,
-          prevalentStroke: 0,
-          prevalentHyp: 0,
-          diabetes: 0,
-          totChol: 210,
-          sysBP: 130,
-          diaBP: 85,
-          BMI: 26,
-          heartRate: 72,
-          glucose: 90,
-        },
-      });
-      setIsRegisterOpen(false);
-      setNewPtName('');
-      setNewPtAge(55);
-      setNewPtPhone('');
-      await loadDashboardData();
+          ...initialBiomarkers,
+        };
+        const created = await createPatient(token, {
+          fullName: newPtName.trim(),
+          age: Number(newPtAge),
+          sex: newPtSex,
+          contactPhone: newPtPhone.trim(),
+          baselineBiomarkers: fullBiomarkers,
+        });
+        const assessRes = await assessDoctorPatient(token, created.patientId, fullBiomarkers);
+        setIsRegisterOpen(false);
+        resetRegistrationForm();
+        if (onViewAssessmentResult) {
+          onViewAssessmentResult(assessRes);
+        } else {
+          await loadDashboardData();
+        }
+      }
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -326,9 +396,24 @@ export default function DoctorDashboardPage({
                 </tr>
               ) : (
                 patients.map((pt) => {
-                  const scorePct = pt.latestRiskPercentage || (pt.latestRiskScore ? pt.latestRiskScore * 100 : 0);
-                  const isHigh = pt.latestRiskBand === 'High' || scorePct >= 20;
-                  const isBorderline = pt.latestRiskBand === 'Borderline' || (scorePct >= 10 && scorePct < 20);
+                  const isAssessed =
+                    Boolean(pt.latestRiskBand) &&
+                    pt.latestRiskBand !== 'Not Assessed' &&
+                    pt.latestRiskBand !== 'Pending' &&
+                    pt.latestRiskScore !== null &&
+                    pt.latestRiskScore !== undefined;
+
+                  const scorePct =
+                    pt.latestRiskPercentage ??
+                    (pt.latestRiskScore !== null && pt.latestRiskScore !== undefined
+                      ? pt.latestRiskScore * 100
+                      : null);
+
+                  const isHigh = isAssessed && (pt.latestRiskBand === 'High' || (scorePct !== null && scorePct >= 20));
+                  const isBorderline =
+                    isAssessed &&
+                    (pt.latestRiskBand === 'Borderline' ||
+                      (scorePct !== null && scorePct >= 10 && scorePct < 20));
 
                   return (
                     <tr key={pt.patientId}>
@@ -337,13 +422,13 @@ export default function DoctorDashboardPage({
                       <td>{pt.age} / {pt.sex}</td>
                       <td>{pt.contactPhone || '—'}</td>
                       <td>
-                        <span style={{ fontWeight: 700 }}>
-                          {scorePct > 0 ? `${scorePct.toFixed(1)}%` : 'Pending'}
+                        <span style={{ fontWeight: 700, color: isAssessed ? (isHigh ? '#dc2626' : isBorderline ? '#d97706' : '#059669') : '#94a3b8' }}>
+                          {isAssessed && scorePct !== null ? `${scorePct.toFixed(1)}%` : '—'}
                         </span>
                       </td>
                       <td>
-                        <span className={`risk-badge ${isHigh ? 'high' : isBorderline ? 'borderline' : 'low'}`}>
-                          {pt.latestRiskBand || 'Pending'}
+                        <span className={`risk-badge ${isAssessed ? (isHigh ? 'high' : isBorderline ? 'borderline' : 'low') : 'neutral'}`}>
+                          {isAssessed ? pt.latestRiskBand : 'Not Assessed'}
                         </span>
                       </td>
                       <td>
@@ -351,8 +436,14 @@ export default function DoctorDashboardPage({
                           <button
                             className="btn-action primary"
                             style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
-                            onClick={() => handleRunAssessment(pt)}
-                            title="Run ML Inference & DiCE Recourse"
+                            onClick={() => {
+                              if (onAssessPatient) {
+                                onAssessPatient(pt);
+                              } else {
+                                handleRunAssessment(pt);
+                              }
+                            }}
+                            title="Open 14-Factor Clinical Assessment Wizard"
                           >
                             Assess
                           </button>
@@ -435,13 +526,177 @@ export default function DoctorDashboardPage({
                     onChange={(e) => setNewPtPhone(e.target.value)}
                   />
                 </div>
+                <div className="form-group-full" style={{ marginTop: '0.5rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontWeight: 600, color: '#0369a1', margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={enterVitalsNow}
+                      onChange={(e) => setEnterVitalsNow(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <span>Enter Initial Vitals &amp; Labs Now (12 Clinical Biomarkers)</span>
+                  </label>
+                  <p style={{ margin: '0.25rem 0 0 1.75rem', fontSize: '0.8rem', color: '#64748b' }}>
+                    {enterVitalsNow
+                      ? 'Biomarkers will run through XGBoost & SHAP immediately upon registration.'
+                      : "Patient will be saved as 'Not Assessed' so vitals can be captured later via the Assess button."}
+                  </p>
+
+                  {enterVitalsNow && (
+                    <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+                      <div>
+                        <label className="form-input-label" style={{ fontSize: '0.8rem' }}>Systolic BP (mmHg)</label>
+                        <input
+                          type="number"
+                          className="form-input-control"
+                          min={80}
+                          max={260}
+                          value={initialBiomarkers.sysBP}
+                          onChange={(e) => updateInitialBiomarker('sysBP', Number(e.target.value))}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="form-input-label" style={{ fontSize: '0.8rem' }}>Diastolic BP (mmHg)</label>
+                        <input
+                          type="number"
+                          className="form-input-control"
+                          min={40}
+                          max={150}
+                          value={initialBiomarkers.diaBP}
+                          onChange={(e) => updateInitialBiomarker('diaBP', Number(e.target.value))}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="form-input-label" style={{ fontSize: '0.8rem' }}>Total Cholesterol (mg/dL)</label>
+                        <input
+                          type="number"
+                          className="form-input-control"
+                          min={100}
+                          max={600}
+                          value={initialBiomarkers.totChol}
+                          onChange={(e) => updateInitialBiomarker('totChol', Number(e.target.value))}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="form-input-label" style={{ fontSize: '0.8rem' }}>Fasting Glucose (mg/dL)</label>
+                        <input
+                          type="number"
+                          className="form-input-control"
+                          min={40}
+                          max={400}
+                          value={initialBiomarkers.glucose}
+                          onChange={(e) => updateInitialBiomarker('glucose', Number(e.target.value))}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="form-input-label" style={{ fontSize: '0.8rem' }}>Body Mass Index (BMI)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          className="form-input-control"
+                          min={15}
+                          max={55}
+                          value={initialBiomarkers.BMI}
+                          onChange={(e) => updateInitialBiomarker('BMI', Number(e.target.value))}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="form-input-label" style={{ fontSize: '0.8rem' }}>Resting Heart Rate (bpm)</label>
+                        <input
+                          type="number"
+                          className="form-input-control"
+                          min={40}
+                          max={200}
+                          value={initialBiomarkers.heartRate}
+                          onChange={(e) => updateInitialBiomarker('heartRate', Number(e.target.value))}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="form-input-label" style={{ fontSize: '0.8rem' }}>Current Smoker</label>
+                        <select
+                          className="form-input-control"
+                          value={initialBiomarkers.currentSmoker}
+                          onChange={(e) => updateInitialBiomarker('currentSmoker', Number(e.target.value))}
+                        >
+                          <option value={0}>Non-Smoker</option>
+                          <option value={1}>Active Smoker</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="form-input-label" style={{ fontSize: '0.8rem' }}>Cigarettes / Day</label>
+                        <input
+                          type="number"
+                          className="form-input-control"
+                          min={0}
+                          max={70}
+                          disabled={initialBiomarkers.currentSmoker === 0}
+                          value={initialBiomarkers.cigsPerDay}
+                          onChange={(e) => updateInitialBiomarker('cigsPerDay', Number(e.target.value))}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-input-label" style={{ fontSize: '0.8rem' }}>BP Medication</label>
+                        <select
+                          className="form-input-control"
+                          value={initialBiomarkers.BPMeds}
+                          onChange={(e) => updateInitialBiomarker('BPMeds', Number(e.target.value))}
+                        >
+                          <option value={0}>No</option>
+                          <option value={1}>Yes (Active)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="form-input-label" style={{ fontSize: '0.8rem' }}>Diabetes Status</label>
+                        <select
+                          className="form-input-control"
+                          value={initialBiomarkers.diabetes}
+                          onChange={(e) => updateInitialBiomarker('diabetes', Number(e.target.value))}
+                        >
+                          <option value={0}>Non-Diabetic</option>
+                          <option value={1}>Diabetic</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="form-input-label" style={{ fontSize: '0.8rem' }}>Prevalent Hypertension</label>
+                        <select
+                          className="form-input-control"
+                          value={initialBiomarkers.prevalentHyp}
+                          onChange={(e) => updateInitialBiomarker('prevalentHyp', Number(e.target.value))}
+                        >
+                          <option value={0}>No</option>
+                          <option value={1}>Yes</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="form-input-label" style={{ fontSize: '0.8rem' }}>History of Stroke</label>
+                        <select
+                          className="form-input-control"
+                          value={initialBiomarkers.prevalentStroke}
+                          onChange={(e) => updateInitialBiomarker('prevalentStroke', Number(e.target.value))}
+                        >
+                          <option value={0}>No</option>
+                          <option value={1}>Yes</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="modal-actions">
                 <button
                   type="button"
                   className="btn-action"
-                  onClick={() => setIsRegisterOpen(false)}
+                  onClick={() => {
+                    setIsRegisterOpen(false);
+                    resetRegistrationForm();
+                  }}
                   disabled={isSubmittingPt}
                 >
                   Cancel
@@ -451,7 +706,7 @@ export default function DoctorDashboardPage({
                   className="btn-action primary"
                   disabled={isSubmittingPt}
                 >
-                  {isSubmittingPt ? 'Registering...' : 'Save & Register'}
+                  {isSubmittingPt ? 'Registering...' : enterVitalsNow ? 'Register & Assess Now' : 'Save & Register'}
                 </button>
               </div>
             </form>
