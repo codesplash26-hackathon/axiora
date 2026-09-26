@@ -1,35 +1,188 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './DoctorDashboard.css';
-import { Heart, Stethoscope, Users, Activity, Target, ShieldCheck, Search, Filter } from 'lucide-react';
+import {
+  Heart,
+  Stethoscope,
+  Users,
+  Activity,
+  Target,
+  ShieldCheck,
+  Search,
+  Plus,
+  RefreshCw,
+  Clock,
+  AlertTriangle,
+  X,
+  UserPlus
+} from 'lucide-react';
+import {
+  getDoctorOverview,
+  listPatients,
+  createPatient,
+  getPatientHistory,
+  assessDoctorPatient,
+} from './api';
+import type {
+  DoctorUser,
+  DoctorOverview,
+  PatientRecord,
+  PatientHistory,
+  AssessmentResponse,
+} from './api';
 
 interface DoctorDashboardPageProps {
-  doctor: { id: string; name: string; email: string };
+  doctor: DoctorUser;
+  token: string;
   onLogout: () => void;
   onNewAssessment: () => void;
+  onViewAssessmentResult?: (assessment: AssessmentResponse) => void;
 }
 
-// Dummy data for the Patient Table
-const recentPatients = [
-  { id: 'PT-8842', age: 45, sex: 'Male', baselineRisk: 28.4, status: 'Plan Generated', date: '2023-10-25' },
-  { id: 'PT-7193', age: 62, sex: 'Female', baselineRisk: 15.2, status: 'Borderline', date: '2023-10-25' },
-  { id: 'PT-9921', age: 58, sex: 'Male', baselineRisk: 42.1, status: 'Pending Review', date: '2023-10-24' },
-  { id: 'PT-3410', age: 39, sex: 'Female', baselineRisk: 4.5, status: 'Low Risk', date: '2023-10-24' },
-  { id: 'PT-6022', age: 51, sex: 'Male', baselineRisk: 21.0, status: 'Plan Generated', date: '2023-10-23' },
-];
+export default function DoctorDashboardPage({
+  doctor,
+  token,
+  onLogout,
+  onNewAssessment,
+  onViewAssessmentResult,
+}: DoctorDashboardPageProps) {
+  const [overview, setOverview] = useState<DoctorOverview | null>(null);
+  const [patients, setPatients] = useState<PatientRecord[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [riskFilter, setRiskFilter] = useState('All');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-const DoctorDashboardPage: React.FC<DoctorDashboardPageProps> = ({ doctor, onLogout, onNewAssessment }) => {
+  // Registration Modal State
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [newPtName, setNewPtName] = useState('');
+  const [newPtAge, setNewPtAge] = useState(55);
+  const [newPtSex, setNewPtSex] = useState('Female');
+  const [newPtPhone, setNewPtPhone] = useState('');
+  const [isSubmittingPt, setIsSubmittingPt] = useState(false);
+
+  // History Drawer State
+  const [selectedHistory, setSelectedHistory] = useState<PatientHistory | null>(null);
+  const [historyPatientName, setHistoryPatientName] = useState('');
+
+  // Fetch live overview and patients list
+  const loadDashboardData = async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const [overviewData, patientsData] = await Promise.all([
+        getDoctorOverview(token),
+        listPatients(token, searchTerm.trim(), riskFilter),
+      ]);
+      setOverview(overviewData);
+      setPatients(patientsData);
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to synchronize with clinical backend.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [riskFilter]);
+
+  // Debounced search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      listPatients(token, searchTerm.trim(), riskFilter)
+        .then(setPatients)
+        .catch(() => {});
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  const handleRegisterPatient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPtName.trim()) return;
+
+    setIsSubmittingPt(true);
+    try {
+      await createPatient(token, {
+        fullName: newPtName.trim(),
+        age: Number(newPtAge),
+        sex: newPtSex,
+        contactPhone: newPtPhone.trim(),
+        baselineBiomarkers: {
+          male: newPtSex === 'Male' ? 1 : 0,
+          age: Number(newPtAge),
+          currentSmoker: 0,
+          cigsPerDay: 0,
+          BPMeds: 0,
+          prevalentStroke: 0,
+          prevalentHyp: 0,
+          diabetes: 0,
+          totChol: 210,
+          sysBP: 130,
+          diaBP: 85,
+          BMI: 26,
+          heartRate: 72,
+          glucose: 90,
+        },
+      });
+      setIsRegisterOpen(false);
+      setNewPtName('');
+      setNewPtAge(55);
+      setNewPtPhone('');
+      await loadDashboardData();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Registration failed');
+    } finally {
+      setIsSubmittingPt(false);
+    }
+  };
+
+  const handleOpenHistory = async (pt: PatientRecord) => {
+    setHistoryPatientName(pt.fullName || pt.patientId);
+    try {
+      const hist = await getPatientHistory(token, pt.patientId);
+      setSelectedHistory(hist);
+    } catch {
+      alert('Unable to load clinical timeline for this patient.');
+    }
+  };
+
+  const handleRunAssessment = async (pt: PatientRecord) => {
+    setIsLoading(true);
+    try {
+      const res = await assessDoctorPatient(token, pt.patientId);
+      if (onViewAssessmentResult) {
+        onViewAssessmentResult(res);
+      } else {
+        alert(`Assessment completed for ${pt.fullName}! Risk: ${res.prediction.risk_percentage.toFixed(1)}% (${res.prediction.risk_band})`);
+        await loadDashboardData();
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Assessment failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="doctor-dashboard-container">
       {/* Doctor Navbar */}
       <nav className="doctor-navbar">
         <div className="doctor-nav-brand">
           <Heart size={24} color="#38bdf8" />
-          <span>CardioRecourse <span style={{ color: '#94a3b8', fontWeight: 500 }}>| Clinical Portal</span></span>
+          <span>
+            CardioRecourse{' '}
+            <span style={{ color: '#94a3b8', fontWeight: 500 }}>
+              | Clinical Decision Portal
+            </span>
+          </span>
         </div>
         <div className="doctor-nav-user">
           <div className="doctor-user-info">
-            <Stethoscope size={18} />
-            <span>Dr. {doctor.name.replace('Dr. ', '')}</span>
+            <Stethoscope size={18} color="#38bdf8" />
+            <span>{doctor.fullName || `Dr. ${doctor.email}`}</span>
+            <span style={{ color: '#64748b', fontSize: '0.8rem' }}>
+              ({doctor.hospital || 'Hospital Staff'})
+            </span>
           </div>
           <button className="btn-doctor-logout" onClick={onLogout}>
             Sign Out
@@ -37,50 +190,78 @@ const DoctorDashboardPage: React.FC<DoctorDashboardPageProps> = ({ doctor, onLog
         </div>
       </nav>
 
-      {/* Dashboard Content */}
+      {/* Main Content */}
       <div className="dashboard-content">
-        <div className="dashboard-header">
-          <h1>Clinical Overview</h1>
-          <p>Monitor patient cardiovascular risk assessments and AI-generated recourse plans.</p>
+        <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1>Clinical Overview &amp; Patient Registry</h1>
+            <p>
+              Real-time cardiovascular risk surveillance, SHAP diagnostic attributions, and DiCE counterfactuals.
+            </p>
+          </div>
+          <button 
+            className="btn-action" 
+            onClick={loadDashboardData}
+            disabled={isLoading}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} /> Refresh Data
+          </button>
         </div>
 
-        {/* Overview Cards */}
+        {errorMessage && (
+          <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AlertTriangle size={18} />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
+        {/* Overview Stats Cards */}
         <div className="overview-grid">
           <div className="stat-card">
             <div className="stat-info">
-              <h3>Total Assessments</h3>
-              <div className="stat-value">1,284</div>
-              <div className="stat-trend positive">↑ 12% this month</div>
+              <h3>Total Registered Patients</h3>
+              <div className="stat-value">{overview ? overview.totalPatients : '...'}</div>
+              <div className="stat-trend positive">Active clinical cohort</div>
             </div>
             <div className="stat-icon blue">
               <Users size={24} />
             </div>
           </div>
+
           <div className="stat-card">
             <div className="stat-info">
-              <h3>High Risk Patients</h3>
-              <div className="stat-value">342</div>
-              <div className="stat-trend negative">↑ 5% this month</div>
+              <h3>High Risk (≥20%)</h3>
+              <div className="stat-value" style={{ color: '#ef4444' }}>
+                {overview ? overview.highRiskCount : '...'}
+              </div>
+              <div className="stat-trend negative">Requires immediate GDMT</div>
             </div>
             <div className="stat-icon red">
               <Activity size={24} />
             </div>
           </div>
+
           <div className="stat-card">
             <div className="stat-info">
-              <h3>Action Plans Issued</h3>
-              <div className="stat-value">892</div>
-              <div className="stat-trend positive">↑ 18% this month</div>
+              <h3>Borderline (10–19.9%)</h3>
+              <div className="stat-value" style={{ color: '#f59e0b' }}>
+                {overview ? overview.borderlineCount : '...'}
+              </div>
+              <div className="stat-trend positive">Target for lifestyle recourse</div>
             </div>
             <div className="stat-icon green">
               <ShieldCheck size={24} />
             </div>
           </div>
+
           <div className="stat-card">
             <div className="stat-info">
-              <h3>Avg Risk Reduction</h3>
-              <div className="stat-value">-14.2%</div>
-              <div className="stat-trend positive">Projected DiCE target</div>
+              <h3>Low Risk (&lt;10%)</h3>
+              <div className="stat-value" style={{ color: '#10b981' }}>
+                {overview ? overview.lowRiskCount : '...'}
+              </div>
+              <div className="stat-trend positive">Wellness &amp; preventative care</div>
             </div>
             <div className="stat-icon purple">
               <Target size={24} />
@@ -88,59 +269,266 @@ const DoctorDashboardPage: React.FC<DoctorDashboardPageProps> = ({ doctor, onLog
           </div>
         </div>
 
-        {/* Patient Table */}
+        {/* Patient Registry Table */}
         <div className="patient-table-container">
           <div className="table-header">
-            <h2>Recent Patient Runs</h2>
+            <h2>Patient Cohort Surveillance</h2>
             <div className="table-actions">
               <div className="search-box">
                 <Search size={18} className="search-icon" />
-                <input type="text" placeholder="Search Patient ID..." />
+                <input
+                  type="text"
+                  placeholder="Search name or ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-              <button className="btn-action">
-                <Filter size={16} style={{ verticalAlign: 'middle', marginRight: '0.25rem' }} /> Filter
+
+              <select
+                className="filter-select"
+                value={riskFilter}
+                onChange={(e) => setRiskFilter(e.target.value)}
+              >
+                <option value="All">All Risk Bands</option>
+                <option value="High">High Risk (≥20%)</option>
+                <option value="Borderline">Borderline (10-19.9%)</option>
+                <option value="Low">Low Risk (&lt;10%)</option>
+              </select>
+
+              <button className="btn-action" onClick={() => setIsRegisterOpen(true)}>
+                <UserPlus size={16} style={{ verticalAlign: 'middle', marginRight: '0.35rem' }} /> Register Patient
               </button>
+
               <button className="btn-action primary" onClick={onNewAssessment}>
-                + New Assessment
+                <Plus size={16} style={{ verticalAlign: 'middle', marginRight: '0.25rem' }} /> Public Assessment Run
               </button>
             </div>
           </div>
+
           <table className="patient-table">
             <thead>
               <tr>
                 <th>Patient ID</th>
-                <th>Date</th>
+                <th>Full Name</th>
                 <th>Age / Sex</th>
-                <th>Baseline Risk</th>
-                <th>Status</th>
+                <th>Contact</th>
+                <th>Latest 10-Yr Risk</th>
+                <th>Status / Band</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {recentPatients.map((pt) => (
-                <tr key={pt.id}>
-                  <td style={{ fontWeight: 600, color: '#0ea5e9' }}>{pt.id}</td>
-                  <td>{pt.date}</td>
-                  <td>{pt.age} / {pt.sex}</td>
-                  <td>
-                    <span style={{ fontWeight: 600 }}>{pt.baselineRisk.toFixed(1)}%</span>
-                  </td>
-                  <td>
-                    <span className={`risk-badge ${pt.baselineRisk >= 20 ? 'high' : pt.baselineRisk >= 10 ? 'borderline' : 'low'}`}>
-                      {pt.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button className="btn-action">View Report</button>
+              {patients.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="empty-state">
+                    {isLoading ? 'Loading patient registry from Firestore...' : 'No patient records found in your clinical cohort.'}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                patients.map((pt) => {
+                  const scorePct = pt.latestRiskPercentage || (pt.latestRiskScore ? pt.latestRiskScore * 100 : 0);
+                  const isHigh = pt.latestRiskBand === 'High' || scorePct >= 20;
+                  const isBorderline = pt.latestRiskBand === 'Borderline' || (scorePct >= 10 && scorePct < 20);
+
+                  return (
+                    <tr key={pt.patientId}>
+                      <td style={{ fontWeight: 600, color: '#0ea5e9' }}>{pt.patientId}</td>
+                      <td style={{ fontWeight: 600, color: '#0f172a' }}>{pt.fullName}</td>
+                      <td>{pt.age} / {pt.sex}</td>
+                      <td>{pt.contactPhone || '—'}</td>
+                      <td>
+                        <span style={{ fontWeight: 700 }}>
+                          {scorePct > 0 ? `${scorePct.toFixed(1)}%` : 'Pending'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`risk-badge ${isHigh ? 'high' : isBorderline ? 'borderline' : 'low'}`}>
+                          {pt.latestRiskBand || 'Pending'}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                          <button
+                            className="btn-action primary"
+                            style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
+                            onClick={() => handleRunAssessment(pt)}
+                            title="Run ML Inference & DiCE Recourse"
+                          >
+                            Assess
+                          </button>
+                          <button
+                            className="btn-action"
+                            style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
+                            onClick={() => handleOpenHistory(pt)}
+                            title="View Previous Assessments & Action Plans"
+                          >
+                            <Clock size={13} style={{ verticalAlign: 'middle', marginRight: '0.2rem' }} /> History
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Modal: Register New Patient */}
+      {isRegisterOpen && (
+        <div className="modal-overlay fade-in">
+          <div className="modal-card fade-up">
+            <div className="modal-header">
+              <h2>Register New Patient</h2>
+              <button className="modal-close-btn" onClick={() => setIsRegisterOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleRegisterPatient}>
+              <div className="modal-form-grid">
+                <div className="form-group-full">
+                  <label className="form-input-label">Patient Full Name</label>
+                  <input
+                    type="text"
+                    className="form-input-control"
+                    placeholder="e.g. Anura Perera"
+                    value={newPtName}
+                    onChange={(e) => setNewPtName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="form-input-label">Chronological Age</label>
+                  <input
+                    type="number"
+                    className="form-input-control"
+                    min={18}
+                    max={120}
+                    value={newPtAge}
+                    onChange={(e) => setNewPtAge(Number(e.target.value))}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="form-input-label">Biological Sex</label>
+                  <select
+                    className="form-input-control"
+                    value={newPtSex}
+                    onChange={(e) => setNewPtSex(e.target.value)}
+                  >
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                  </select>
+                </div>
+
+                <div className="form-group-full">
+                  <label className="form-input-label">Contact Phone (Optional)</label>
+                  <input
+                    type="tel"
+                    className="form-input-control"
+                    placeholder="+94 77 123 4567"
+                    value={newPtPhone}
+                    onChange={(e) => setNewPtPhone(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn-action"
+                  onClick={() => setIsRegisterOpen(false)}
+                  disabled={isSubmittingPt}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-action primary"
+                  disabled={isSubmittingPt}
+                >
+                  {isSubmittingPt ? 'Registering...' : 'Save & Register'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Patient Clinical Timeline & History */}
+      {selectedHistory && (
+        <div className="modal-overlay fade-in">
+          <div className="modal-card fade-up">
+            <div className="modal-header">
+              <div>
+                <h2>Clinical Timeline: {historyPatientName}</h2>
+                <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                  Patient ID: {selectedHistory.patientId}
+                </span>
+              </div>
+              <button className="modal-close-btn" onClick={() => setSelectedHistory(null)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ marginTop: '1rem' }}>
+              <h3 style={{ fontSize: '1rem', color: '#0f172a', marginBottom: '0.75rem' }}>
+                Assessment Timeline ({selectedHistory.assessments.length})
+              </h3>
+              {selectedHistory.assessments.length === 0 ? (
+                <p style={{ color: '#64748b', fontSize: '0.9rem' }}>No previous assessments recorded.</p>
+              ) : (
+                selectedHistory.assessments.map((a) => (
+                  <div key={a.assessmentId} className="timeline-entry">
+                    <div className="timeline-date">
+                      {new Date(a.assessedAt).toLocaleDateString()} {new Date(a.assessedAt).toLocaleTimeString()}
+                    </div>
+                    <div className="timeline-title">
+                      10-Year Risk: <strong>{a.riskPercentage.toFixed(1)}%</strong> ({a.riskBand})
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#475569' }}>
+                      Latency: {a.pipelineLatencyMs}ms | Systolic BP: {a.inputBiomarkers.sysBP} mmHg | Cholesterol: {a.inputBiomarkers.totChol} mg/dL
+                    </div>
+                  </div>
+                ))
+              )}
+
+              <h3 style={{ fontSize: '1rem', color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                Confirmed Action Plans ({selectedHistory.actionPlans.length})
+              </h3>
+              {selectedHistory.actionPlans.length === 0 ? (
+                <p style={{ color: '#64748b', fontSize: '0.9rem' }}>No action plans confirmed yet.</p>
+              ) : (
+                selectedHistory.actionPlans.map((p) => (
+                  <div key={p.planId} className="timeline-entry" style={{ borderColor: '#10b981' }}>
+                    <div className="timeline-date">
+                      {new Date(p.createdAt).toLocaleDateString()}
+                    </div>
+                    <div className="timeline-title" style={{ color: '#047857' }}>
+                      {p.selectedPathwayTitle} (Projected: {p.projectedRiskPercentage.toFixed(1)}%, Reduction: -{p.absoluteRiskReduction.toFixed(1)}%)
+                    </div>
+                    {p.clinicianNotes && (
+                      <p style={{ fontSize: '0.85rem', background: '#f8fafc', padding: '0.5rem', borderRadius: '0.375rem', marginTop: '0.35rem' }}>
+                        <strong>Doctor Notes:</strong> {p.clinicianNotes}
+                      </p>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="modal-actions">
+              <button className="btn-action primary" onClick={() => setSelectedHistory(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default DoctorDashboardPage;
+}
